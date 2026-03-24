@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
 Universal Controller Framework Launch File
+
+启动三个独立节点：
+1. vtm_interpreter_node - VTM 遥控器解释器
+2. ndj_interpreter_node - NDJ 遥控器解释器
+3. universal_controller_node - Hub 中心节点
 """
 
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -28,14 +33,30 @@ def generate_launch_description():
             default_value='infantry',
             description='Robot type: infantry, sentry'
         ),
+        DeclareLaunchArgument(
+            'active_interpreter',
+            default_value='both',
+            description='Which interpreter to start: vtm, ndj, or both'
+        ),
 
-        # RC Interpreter Node (独立节点)
+        # VTM Interpreter Node
         Node(
             package='universal_controller',
-            executable='rc_interpreter_node',
-            name='rc_interpreter',
+            executable='vtm_interpreter_node',
+            name='vtm_interpreter',
             parameters=[LaunchConfiguration('config_file')],
             output='screen',
+            condition=None,  # TODO: add condition based on active_interpreter
+        ),
+
+        # NDJ Interpreter Node
+        Node(
+            package='universal_controller',
+            executable='ndj_interpreter_node',
+            name='ndj_interpreter',
+            parameters=[LaunchConfiguration('config_file')],
+            output='screen',
+            condition=None,  # TODO: add condition based on active_interpreter
         ),
 
         # Main Hub Node
