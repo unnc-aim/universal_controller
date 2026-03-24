@@ -30,24 +30,24 @@ namespace universal_controller
         fire_->init(this, config_loader_);
 
         // 订阅统一输入
-        std::string topic_unified = config_loader_.get_string("topic_unified_input", "/universal_controller/unified_input");
+        std::string topic_unified = config_loader_.get_string("topics.unified_input", "/universal_controller/unified_input");
         sub_unified_ = this->create_subscription<msg::UnifiedInput>(
             topic_unified, qos_best_effort_,
             std::bind(&Hub::cb_unified_input, this, std::placeholders::_1));
 
         // 订阅自瞄指令
-        std::string topic_autoaim = config_loader_.get_string("topic_autoaim_cmd", "/sp_vision/autoaim_command");
+        std::string topic_autoaim = config_loader_.get_string("topics.autoaim_cmd", "/sp_vision/autoaim_command");
         sub_autoaim_ = this->create_subscription<sp_msgs::msg::AutoAimCommandMsg>(
             topic_autoaim, qos_best_effort_,
             std::bind(&Hub::cb_autoaim, this, std::placeholders::_1));
 
         // 订阅裁判系统
-        std::string topic_referee = config_loader_.get_string("topic_referee_constraints", "/referee/constraints");
+        std::string topic_referee = config_loader_.get_string("topics.referee_constraints", "/referee/constraints");
         sub_referee_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
             topic_referee, qos_best_effort_,
             std::bind(&Hub::cb_referee, this, std::placeholders::_1));
 
-        std::string topic_game_status = config_loader_.get_string("topic_referee_game_status", "/referee/game_status");
+        std::string topic_game_status = config_loader_.get_string("topics.referee_game_status", "/referee/game_status");
         sub_game_status_ = this->create_subscription<std_msgs::msg::String>(
             topic_game_status, qos_best_effort_,
             std::bind(&Hub::cb_game_status, this, std::placeholders::_1));
@@ -79,10 +79,10 @@ namespace universal_controller
     void Hub::declare_parameters()
     {
         this->declare_parameter("control_frequency", 1000);
-        this->declare_parameter("topic_unified_input", "/universal_controller/unified_input");
-        this->declare_parameter("topic_autoaim_cmd", "/sp_vision/autoaim_command");
-        this->declare_parameter("topic_referee_constraints", "/referee/constraints");
-        this->declare_parameter("topic_referee_game_status", "/referee/game_status");
+        this->declare_parameter("topics.unified_input", "/universal_controller/unified_input");
+        this->declare_parameter("topics.autoaim_cmd", "/sp_vision/autoaim_command");
+        this->declare_parameter("topics.referee_constraints", "/referee/constraints");
+        this->declare_parameter("topics.referee_game_status", "/referee/game_status");
         this->declare_parameter("autoaim_timeout_s", 0.2);
         this->declare_parameter("referee_timeout_s", 0.5);
     }

@@ -39,62 +39,62 @@ namespace universal_controller
     void VTMInterpreter::declare_parameters()
     {
         // 话题
-        this->declare_parameter("topic_rc_read", "/ecat/sn4653115/app1/read");
-        this->declare_parameter("topic_unified_output", "/universal_controller/vtm_input");
+        this->declare_parameter("rc_interpreter.topic_vtm_rc", "/ecat/sn4653115/app1/read");
+        this->declare_parameter("rc_interpreter.topic_unified_output", "/universal_controller/unified_input");
 
         // 输入处理器参数
-        this->declare_parameter("joystick_max_output", 8000.0);
-        this->declare_parameter("joystick_deadzone", 0.05);
+        this->declare_parameter("rc_interpreter.joystick_max_output", 8000.0);
+        this->declare_parameter("rc_interpreter.joystick_deadzone", 0.05);
 
-        this->declare_parameter("keyboard_speed_default", 3000.0);
-        this->declare_parameter("keyboard_speed_min", 0.0);
-        this->declare_parameter("keyboard_speed_max", 8000.0);
-        this->declare_parameter("keyboard_speed_step", 6.0);
+        this->declare_parameter("rc_interpreter.keyboard_speed_default", 3000.0);
+        this->declare_parameter("rc_interpreter.keyboard_speed_min", 0.0);
+        this->declare_parameter("rc_interpreter.keyboard_speed_max", 8000.0);
+        this->declare_parameter("rc_interpreter.keyboard_speed_step", 6.0);
 
-        this->declare_parameter("spin_speed_default", 3000.0);
-        this->declare_parameter("spin_speed_min", 800.0);
-        this->declare_parameter("spin_speed_max", 6500.0);
-        this->declare_parameter("spin_dial_gain", 6.0);
-        this->declare_parameter("spin_key_gain", 2.4);
-        this->declare_parameter("spin_dial_deadzone", 0.05);
+        this->declare_parameter("rc_interpreter.spin_speed_default", 3000.0);
+        this->declare_parameter("rc_interpreter.spin_speed_min", 800.0);
+        this->declare_parameter("rc_interpreter.spin_speed_max", 6500.0);
+        this->declare_parameter("rc_interpreter.spin_dial_gain", 6.0);
+        this->declare_parameter("rc_interpreter.spin_key_gain", 2.4);
+        this->declare_parameter("rc_interpreter.spin_dial_deadzone", 0.05);
 
-        this->declare_parameter("mouse_sensitivity", 1.0);
-        this->declare_parameter("mouse_yaw_gain", 0.75);
-        this->declare_parameter("mouse_pitch_gain", 1.0);
-        this->declare_parameter("mouse_limit", 100.0);
+        this->declare_parameter("rc_interpreter.mouse_sensitivity", 1.0);
+        this->declare_parameter("rc_interpreter.mouse_yaw_gain", 0.75);
+        this->declare_parameter("rc_interpreter.mouse_pitch_gain", 1.0);
+        this->declare_parameter("rc_interpreter.mouse_limit", 100.0);
 
-        this->declare_parameter("pitch_min_deg", -25.0);
-        this->declare_parameter("pitch_max_deg", 40.0);
+        this->declare_parameter("rc_interpreter.pitch_min_deg", -25.0);
+        this->declare_parameter("rc_interpreter.pitch_max_deg", 40.0);
     }
 
     void VTMInterpreter::load_parameters()
     {
-        topic_rc_read_ = this->get_parameter("topic_rc_read").as_string();
-        topic_unified_output_ = this->get_parameter("topic_unified_output").as_string();
+        topic_rc_read_ = this->get_parameter("rc_interpreter.topic_vtm_rc").as_string();
+        topic_unified_output_ = this->get_parameter("rc_interpreter.topic_unified_output").as_string();
 
         // 加载输入处理器配置
-        input_config_.joystick_max_output = this->get_parameter("joystick_max_output").as_double();
-        input_config_.joystick_deadzone = this->get_parameter("joystick_deadzone").as_double();
+        input_config_.joystick_max_output = this->get_parameter("rc_interpreter.joystick_max_output").as_double();
+        input_config_.joystick_deadzone = this->get_parameter("rc_interpreter.joystick_deadzone").as_double();
 
-        input_config_.keyboard_speed_default = this->get_parameter("keyboard_speed_default").as_double();
-        input_config_.keyboard_speed_min = this->get_parameter("keyboard_speed_min").as_double();
-        input_config_.keyboard_speed_max = this->get_parameter("keyboard_speed_max").as_double();
-        input_config_.keyboard_speed_step = this->get_parameter("keyboard_speed_step").as_double();
+        input_config_.keyboard_speed_default = this->get_parameter("rc_interpreter.keyboard_speed_default").as_double();
+        input_config_.keyboard_speed_min = this->get_parameter("rc_interpreter.keyboard_speed_min").as_double();
+        input_config_.keyboard_speed_max = this->get_parameter("rc_interpreter.keyboard_speed_max").as_double();
+        input_config_.keyboard_speed_step = this->get_parameter("rc_interpreter.keyboard_speed_step").as_double();
 
-        input_config_.spin_speed_default = this->get_parameter("spin_speed_default").as_double();
-        input_config_.spin_speed_min = this->get_parameter("spin_speed_min").as_double();
-        input_config_.spin_speed_max = this->get_parameter("spin_speed_max").as_double();
-        input_config_.spin_dial_gain = this->get_parameter("spin_dial_gain").as_double();
-        input_config_.spin_key_gain = this->get_parameter("spin_key_gain").as_double();
-        input_config_.spin_dial_deadzone = this->get_parameter("spin_dial_deadzone").as_double();
+        input_config_.spin_speed_default = this->get_parameter("rc_interpreter.spin_speed_default").as_double();
+        input_config_.spin_speed_min = this->get_parameter("rc_interpreter.spin_speed_min").as_double();
+        input_config_.spin_speed_max = this->get_parameter("rc_interpreter.spin_speed_max").as_double();
+        input_config_.spin_dial_gain = this->get_parameter("rc_interpreter.spin_dial_gain").as_double();
+        input_config_.spin_key_gain = this->get_parameter("rc_interpreter.spin_key_gain").as_double();
+        input_config_.spin_dial_deadzone = this->get_parameter("rc_interpreter.spin_dial_deadzone").as_double();
 
-        input_config_.mouse_sensitivity = this->get_parameter("mouse_sensitivity").as_double();
-        input_config_.mouse_yaw_gain = this->get_parameter("mouse_yaw_gain").as_double();
-        input_config_.mouse_pitch_gain = this->get_parameter("mouse_pitch_gain").as_double();
-        input_config_.mouse_limit = this->get_parameter("mouse_limit").as_double();
+        input_config_.mouse_sensitivity = this->get_parameter("rc_interpreter.mouse_sensitivity").as_double();
+        input_config_.mouse_yaw_gain = this->get_parameter("rc_interpreter.mouse_yaw_gain").as_double();
+        input_config_.mouse_pitch_gain = this->get_parameter("rc_interpreter.mouse_pitch_gain").as_double();
+        input_config_.mouse_limit = this->get_parameter("rc_interpreter.mouse_limit").as_double();
 
-        input_config_.pitch_min_deg = this->get_parameter("pitch_min_deg").as_double();
-        input_config_.pitch_max_deg = this->get_parameter("pitch_max_deg").as_double();
+        input_config_.pitch_min_deg = this->get_parameter("rc_interpreter.pitch_min_deg").as_double();
+        input_config_.pitch_max_deg = this->get_parameter("rc_interpreter.pitch_max_deg").as_double();
 
         // 更新输入处理器
         input_processor_.update_config(input_config_);

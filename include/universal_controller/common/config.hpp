@@ -192,25 +192,25 @@ namespace universal_controller
          */
         void load(const ConfigLoader &cfg)
         {
-            wheel_track = cfg.get_prefixed_double("chassis", "wheel_track", wheel_track);
-            wheel_base = cfg.get_prefixed_double("chassis", "wheel_base", wheel_base);
-            ecd_zeros = cfg.get_array4<int>("chassis.ecd_zeros", ecd_zeros);
+            wheel_track = cfg.get_prefixed_double("controllers.chassis", "wheel_track", wheel_track);
+            wheel_base = cfg.get_prefixed_double("controllers.chassis", "wheel_base", wheel_base);
+            ecd_zeros = cfg.get_array4<int>("controllers.chassis.ecd_zeros", ecd_zeros);
 
             motor_type = cfg.get_motor_type("motor_type.chassis", motor_type);
 
-            topic_drive_write = cfg.get_prefixed_string("chassis", "topic_drive_write", topic_drive_write);
-            topic_drive_read = cfg.get_prefixed_string("chassis", "topic_drive_read", topic_drive_read);
-            topic_steer_write = cfg.get_prefixed_string("chassis", "topic_steer_write", topic_steer_write);
-            topic_steer_read = cfg.get_prefixed_string("chassis", "topic_steer_read", topic_steer_read);
-            topic_yaw_read = cfg.get_prefixed_string("chassis", "topic_yaw_read", topic_yaw_read);
+            topic_drive_write = cfg.get_prefixed_string("controllers.chassis", "topic_drive_write", topic_drive_write);
+            topic_drive_read = cfg.get_prefixed_string("controllers.chassis", "topic_drive_read", topic_drive_read);
+            topic_steer_write = cfg.get_prefixed_string("controllers.chassis", "topic_steer_write", topic_steer_write);
+            topic_steer_read = cfg.get_prefixed_string("controllers.chassis", "topic_steer_read", topic_steer_read);
+            topic_yaw_read = cfg.get_prefixed_string("controllers.chassis", "topic_yaw_read", topic_yaw_read);
 
-            spin_speed_default = cfg.get_prefixed_double("chassis", "spin_speed_default", spin_speed_default);
-            spin_speed_min = cfg.get_prefixed_double("chassis", "spin_speed_min", spin_speed_min);
-            spin_speed_max = cfg.get_prefixed_double("chassis", "spin_speed_max", spin_speed_max);
+            spin_speed_default = cfg.get_prefixed_double("controllers.chassis", "spin_speed_default", spin_speed_default);
+            spin_speed_min = cfg.get_prefixed_double("controllers.chassis", "spin_speed_min", spin_speed_min);
+            spin_speed_max = cfg.get_prefixed_double("controllers.chassis", "spin_speed_max", spin_speed_max);
 
-            steer_angle_pid = cfg.get_pid_params("chassis.steer_angle_pid", steer_angle_pid);
-            steer_speed_pid = cfg.get_pid_params("chassis.steer_speed_pid", steer_speed_pid);
-            drive_speed_pid = cfg.get_pid_params("chassis.drive_speed_pid", drive_speed_pid);
+            steer_angle_pid = cfg.get_pid_params("controllers.chassis.steer_angle_pid", steer_angle_pid);
+            steer_speed_pid = cfg.get_pid_params("controllers.chassis.steer_speed_pid", steer_speed_pid);
+            drive_speed_pid = cfg.get_pid_params("controllers.chassis.drive_speed_pid", drive_speed_pid);
         }
     };
 
@@ -247,24 +247,24 @@ namespace universal_controller
 
         void load(const ConfigLoader &cfg)
         {
-            pitch_center_ecd = cfg.get_prefixed_int("gimbal", "pitch_center_ecd", pitch_center_ecd);
-            pitch_min_deg = cfg.get_prefixed_double("gimbal", "pitch_min_deg", pitch_min_deg);
-            pitch_max_deg = cfg.get_prefixed_double("gimbal", "pitch_max_deg", pitch_max_deg);
-            mouse_sensitivity = cfg.get_prefixed_double("gimbal", "mouse_sensitivity", mouse_sensitivity);
+            pitch_center_ecd = cfg.get_prefixed_int("controllers.gimbal", "pitch_center_ecd", pitch_center_ecd);
+            pitch_min_deg = cfg.get_prefixed_double("controllers.gimbal", "pitch_min_deg", pitch_min_deg);
+            pitch_max_deg = cfg.get_prefixed_double("controllers.gimbal", "pitch_max_deg", pitch_max_deg);
+            mouse_sensitivity = cfg.get_prefixed_double("controllers.gimbal", "mouse_sensitivity", mouse_sensitivity);
 
             yaw_motor_type = cfg.get_motor_type("motor_type.gimbal_yaw", yaw_motor_type);
 
-            topic_pitch_write = cfg.get_prefixed_string("gimbal", "topic_pitch_write", topic_pitch_write);
-            topic_pitch_read = cfg.get_prefixed_string("gimbal", "topic_pitch_read", topic_pitch_read);
-            topic_yaw_write = cfg.get_prefixed_string("gimbal", "topic_yaw_write", topic_yaw_write);
-            topic_yaw_read = cfg.get_prefixed_string("gimbal", "topic_yaw_read", topic_yaw_read);
-            topic_imu_read = cfg.get_prefixed_string("gimbal", "topic_imu_read", topic_imu_read);
-            topic_autoaim_cmd = cfg.get_prefixed_string("gimbal", "topic_autoaim_cmd", topic_autoaim_cmd);
+            topic_pitch_write = cfg.get_prefixed_string("controllers.gimbal", "topic_pitch_write", topic_pitch_write);
+            topic_pitch_read = cfg.get_prefixed_string("controllers.gimbal", "topic_pitch_read", topic_pitch_read);
+            topic_yaw_write = cfg.get_prefixed_string("controllers.gimbal", "topic_yaw_write", topic_yaw_write);
+            topic_yaw_read = cfg.get_prefixed_string("controllers.gimbal", "topic_yaw_read", topic_yaw_read);
+            topic_imu_read = cfg.get_prefixed_string("controllers.gimbal", "topic_imu_read", topic_imu_read);
+            topic_autoaim_cmd = cfg.get_prefixed_string("controllers.gimbal", "topic_autoaim_cmd", topic_autoaim_cmd);
 
-            yaw_pos_pid = cfg.get_pid_params("gimbal.yaw_pos_pid", yaw_pos_pid);
-            yaw_spd_pid = cfg.get_pid_params("gimbal.yaw_spd_pid", yaw_spd_pid);
+            yaw_pos_pid = cfg.get_pid_params("controllers.gimbal.yaw_pos_pid", yaw_pos_pid);
+            yaw_spd_pid = cfg.get_pid_params("controllers.gimbal.yaw_spd_pid", yaw_spd_pid);
 
-            autoaim_timeout_s = cfg.get_prefixed_double("gimbal", "autoaim_timeout_s", autoaim_timeout_s);
+            autoaim_timeout_s = cfg.get_prefixed_double("controllers.gimbal", "autoaim_timeout_s", autoaim_timeout_s);
         }
     };
 
@@ -297,20 +297,20 @@ namespace universal_controller
 
         void load(const ConfigLoader &cfg)
         {
-            enabled = cfg.get_prefixed_bool("fire", "enabled", enabled);
-            friction_speed_default = cfg.get_prefixed_double("fire", "friction_speed_default", friction_speed_default);
+            enabled = cfg.get_prefixed_bool("controllers.fire", "enabled", enabled);
+            friction_speed_default = cfg.get_prefixed_double("controllers.fire", "friction_speed_default", friction_speed_default);
 
-            shot_period_ms = cfg.get_prefixed_double("fire", "shot_period_ms", shot_period_ms);
-            load_current_threshold = cfg.get_prefixed_int("fire", "load_current_threshold", load_current_threshold);
-            load_speed_ecd = cfg.get_prefixed_double("fire", "load_speed_ecd", load_speed_ecd);
+            shot_period_ms = cfg.get_prefixed_double("controllers.fire", "shot_period_ms", shot_period_ms);
+            load_current_threshold = cfg.get_prefixed_int("controllers.fire", "load_current_threshold", load_current_threshold);
+            load_speed_ecd = cfg.get_prefixed_double("controllers.fire", "load_speed_ecd", load_speed_ecd);
 
-            topic_fire_write = cfg.get_prefixed_string("fire", "topic_fire_write", topic_fire_write);
-            topic_fire_read = cfg.get_prefixed_string("fire", "topic_fire_read", topic_fire_read);
+            topic_fire_write = cfg.get_prefixed_string("controllers.fire", "topic_fire_write", topic_fire_write);
+            topic_fire_read = cfg.get_prefixed_string("controllers.fire", "topic_fire_read", topic_fire_read);
 
-            trigger_pos_pid = cfg.get_pid_params("fire.trigger_pos_pid", trigger_pos_pid);
-            trigger_spd_pid = cfg.get_pid_params("fire.trigger_spd_pid", trigger_spd_pid);
+            trigger_pos_pid = cfg.get_pid_params("controllers.fire.trigger_pos_pid", trigger_pos_pid);
+            trigger_spd_pid = cfg.get_pid_params("controllers.fire.trigger_spd_pid", trigger_spd_pid);
 
-            referee_timeout_s = cfg.get_prefixed_double("fire", "referee_timeout_s", referee_timeout_s);
+            referee_timeout_s = cfg.get_prefixed_double("controllers.fire", "referee_timeout_s", referee_timeout_s);
         }
     };
 
