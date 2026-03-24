@@ -1,0 +1,280 @@
+/**
+ * @file config.hpp
+ * @brief 配置加载工具
+ *
+ * 提供统一的参数加载和配置管理
+ */
+
+#pragma once
+
+#include <rclcpp/rclcpp.hpp>
+#include <string>
+#include <vector>
+#include <array>
+
+namespace universal_controller {
+
+/**
+ * @brief 配置加载器类
+ *
+ * 封装 ROS2 参数读取，提供类型安全的配置访问
+ */
+class ConfigLoader {
+public:
+    explicit ConfigLoader(rclcpp::Node* node) : node_(node) {}
+
+    // ========== 基础类型参数 ==========
+
+    int get_int(const std::string& name, int default_val = 0) const {
+        node_->declare_parameter(name, default_val);
+        return node_->get_parameter(name).as_int();
+    }
+
+    double get_double(const std::string& name, double default_val = 0.0) const {
+        node_->declare_parameter(name, default_val);
+        return node_->get_parameter(name).as_double();
+    }
+
+    std::string get_string(const std::string& name, const std::string& default_val = "") const {
+        node_->declare_parameter(name, default_val);
+        return node_->get_parameter(name).as_string();
+    }
+
+    bool get_bool(const std::string& name, bool default_val = false) const {
+        node_->declare_parameter(name, default_val);
+        return node_->get_parameter(name).as_bool();
+    }
+
+    // ========== 带前缀的参数 ==========
+
+    int get_int(const std::string& prefix, const std::string& name, int default_val = 0) const {
+        return get_int(prefix + "." + name, default_val);
+    }
+
+    double get_double(const std::string& prefix, const std::string& name, double default_val = 0.0) const {
+        return get_double(prefix + "." + name, default_val);
+    }
+
+    std::string get_string(const std::string& prefix, const std::string& name, const std::string& default_val = "") const {
+        return get_string(prefix + "." + name, default_val);
+    }
+
+    bool get_bool(const std::string& prefix, const std::string& name, bool default_val = false) const {
+        return get_bool(prefix + "." + name, default_val);
+    }
+
+    // ========== 数组参数 ==========
+
+    std::vector<int> get_int_array(const std::string& name, const std::vector<int>& default_val = {}) const {
+        node_->declare_parameter(name, default_val);
+        return node_->get_parameter(name).as_integer_array();
+    }
+
+    std::vector<double> get_double_array(const std::string& name, const std::vector<double>& default_val = {}) const {
+        node_->declare_parameter(name, default_val);
+        return node_->get_parameter(name).as_double_array();
+    }
+
+    std::vector<std::string> get_string_array(const std::string& name, const std::vector<std::string>& default_val = {}) const {
+        node_->declare_parameter(name, default_val);
+        return node_->get_parameter(name).as_string_array();
+    }
+
+    // ========== 特用数组转换 ==========
+
+    /**
+     * @brief 获取 4 元素数组
+     */
+    template<typename T>
+    std::array<T, 4> get_array4(const std::string& name, const std::array<T, 4>& default_val = {}) const {
+        std::vector<T> vec;
+        if constexpr (std::is_same_v<T, int>) {
+            vec = get_int_array(name, std::vector<T>(default_val.begin(), default_val.end()));
+        } else if constexpr (std::is_same_v<T, double>) {
+            vec = get_double_array(name, std::vector<T>(default_val.begin(), default_val.end()));
+        }
+        std::array<T, 4> arr{};
+        for (size_t i = 0; i < 4 && i < vec.size(); ++i) {
+            arr[i] = vec[i];
+        }
+        return arr;
+    }
+
+    /**
+     * @brief 获取 PID 参数 [kp, ki, kd, max_out, max_iout]
+     */
+    struct PIDParams {
+        double kp, ki, kd, max_out, max_iout;
+    };
+    PIDParams get_pid_params(const std::string& name, const PIDParams& default_val = {0, 0, 0, 0, 0}) const {
+        auto vec = get_double_array(name, {default_val.kp, default_val.ki, default_val.kd, default_val.max_out, default_val.max_iout});
+        if (vec.size() >= 5) {
+            return {vec[0], vec[1], vec[2], vec[3], vec[4]};
+        }
+        return default_val;
+    }
+
+    /**
+     * @brief 获取电机类型
+     */
+    MotorType get_motor_type(const std::string& name, MotorType default_val = MotorType::DJI) const {
+        std::string type_str = get_string(name, default_val == MotorType::DJI ? "DJI" : "LK");
+        return (type_str == "LK") ? MotorType::LK : MotorType::DJI;
+    }
+
+private:
+    rclcpp::Node* node_;
+};
+
+/**
+ * @brief 底盘配置结构体
+ */
+struct ChassisConfig {
+    // 几何参数
+    double wheel_track{0.372};
+    double wheel_base{0.372};
+
+    // 编码器零位
+    std::array<int, 4> ecd_zeros{0, 0, 0, 0};
+
+    // 电机类型
+    MotorType motor_type{MotorType::DJI};
+
+    // 话题
+    std::string topic_drive_write;
+    std::string topic_drive_read;
+    std::string topic_steer_write;
+    std::string topic_steer_read;
+    std::string topic_yaw_read;
+
+    // 小陀螺参数
+    double spin_speed_default{3000.0};
+    double spin_speed_min{800.0};
+    double spin_speed_max{6500.0};
+
+    // PID 参数（LK 电机用）
+    ConfigLoader::PIDParams steer_angle_pid{0.3, 0.0, 0.0, 150.0, 300.0};
+    ConfigLoader::PIDParams steer_speed_pid{5.5, 0.0, 3.3, 850.0, 500.0};
+    ConfigLoader::PIDParams drive_speed_pid{6.0, 0.3, 0.0, 2000.0, 250.0};
+
+    /**
+     * @brief 从参数服务器加载
+     */
+    void load(const ConfigLoader& cfg) {
+        wheel_track = cfg.get_double("chassis", "wheel_track", wheel_track);
+        wheel_base = cfg.get_double("chassis", "wheel_base", wheel_base);
+        ecd_zeros = cfg.get_array4<int>("chassis.ecd_zeros", ecd_zeros);
+
+        motor_type = cfg.get_motor_type("motor_type.chassis", motor_type);
+
+        topic_drive_write = cfg.get_string("chassis", "topic_drive_write");
+        topic_drive_read = cfg.get_string("chassis", "topic_drive_read");
+        topic_steer_write = cfg.get_string("chassis", "topic_steer_write");
+        topic_steer_read = cfg.get_string("chassis", "topic_steer_read");
+        topic_yaw_read = cfg.get_string("chassis", "topic_yaw_read");
+
+        spin_speed_default = cfg.get_double("chassis", "spin_speed_default", spin_speed_default);
+        spin_speed_min = cfg.get_double("chassis", "spin_speed_min", spin_speed_min);
+        spin_speed_max = cfg.get_double("chassis", "spin_speed_max", spin_speed_max);
+
+        steer_angle_pid = cfg.get_pid_params("chassis.steer_angle_pid", steer_angle_pid);
+        steer_speed_pid = cfg.get_pid_params("chassis.steer_speed_pid", steer_speed_pid);
+        drive_speed_pid = cfg.get_pid_params("chassis.drive_speed_pid", drive_speed_pid);
+    }
+};
+
+/**
+ * @brief 云台配置结构体
+ */
+struct GimbalConfig {
+    // Pitch 限位
+    int pitch_center_ecd{4600};
+    double pitch_min_deg{-25.0};
+    double pitch_max_deg{40.0};
+
+    // 鼠标灵敏度
+    double mouse_sensitivity{1.0};
+
+    // Yaw 电机类型
+    MotorType yaw_motor_type{MotorType::LK};
+
+    // 话题
+    std::string topic_pitch_write;
+    std::string topic_pitch_read;
+    std::string topic_yaw_write;
+    std::string topic_yaw_read;
+    std::string topic_imu_read;
+
+    // PID 参数
+    ConfigLoader::PIDParams yaw_pos_pid{20.0, 0.0, 0.5, 50.0, 50.0};
+    ConfigLoader::PIDParams yaw_spd_pid{220.0, 0.3, 4600.0, 2048.0, 200.0};
+
+    // 自瞄超时
+    double autoaim_timeout_s{0.2};
+
+    void load(const ConfigLoader& cfg) {
+        pitch_center_ecd = cfg.get_int("gimbal", "pitch_center_ecd", pitch_center_ecd);
+        pitch_min_deg = cfg.get_double("gimbal", "pitch_min_deg", pitch_min_deg);
+        pitch_max_deg = cfg.get_double("gimbal", "pitch_max_deg", pitch_max_deg);
+        mouse_sensitivity = cfg.get_double("gimbal", "mouse_sensitivity", mouse_sensitivity);
+
+        yaw_motor_type = cfg.get_motor_type("motor_type.gimbal_yaw", yaw_motor_type);
+
+        topic_pitch_write = cfg.get_string("gimbal", "topic_pitch_write");
+        topic_pitch_read = cfg.get_string("gimbal", "topic_pitch_read");
+        topic_yaw_write = cfg.get_string("gimbal", "topic_yaw_write");
+        topic_yaw_read = cfg.get_string("gimbal", "topic_yaw_read");
+        topic_imu_read = cfg.get_string("gimbal", "topic_imu_read");
+
+        yaw_pos_pid = cfg.get_pid_params("gimbal.yaw_pos_pid", yaw_pos_pid);
+        yaw_spd_pid = cfg.get_pid_params("gimbal.yaw_spd_pid", yaw_spd_pid);
+
+        autoaim_timeout_s = cfg.get_double("gimbal", "autoaim_timeout_s", autoaim_timeout_s);
+    }
+};
+
+/**
+ * @brief 发射配置结构体
+ */
+struct FireConfig {
+    // 是否启用
+    bool enabled{true};
+
+    // 摩擦轮
+    double friction_speed_default{6500.0};
+
+    // 发射参数
+    double shot_period_ms{30.0};
+    int load_current_threshold{500};
+    double load_speed_ecd{2.5};
+
+    // 话题
+    std::string topic_fire_write;
+    std::string topic_fire_read;
+
+    // PID 参数
+    ConfigLoader::PIDParams trigger_pos_pid{0.4, 0.0, 7.0, 13000.0, 1500.0};
+    ConfigLoader::PIDParams trigger_spd_pid{5.0, 0.01, 0.0, 10000.0, 1000.0};
+
+    // 裁判系统超时
+    double referee_timeout_s{0.5};
+
+    void load(const ConfigLoader& cfg) {
+        enabled = cfg.get_bool("fire", "enabled", enabled);
+        friction_speed_default = cfg.get_double("fire", "friction_speed_default", friction_speed_default);
+
+        shot_period_ms = cfg.get_double("fire", "shot_period_ms", shot_period_ms);
+        load_current_threshold = cfg.get_int("fire", "load_current_threshold", load_current_threshold);
+        load_speed_ecd = cfg.get_double("fire", "load_speed_ecd", load_speed_ecd);
+
+        topic_fire_write = cfg.get_string("fire", "topic_fire_write");
+        topic_fire_read = cfg.get_string("fire", "topic_fire_read");
+
+        trigger_pos_pid = cfg.get_pid_params("fire.trigger_pos_pid", trigger_pos_pid);
+        trigger_spd_pid = cfg.get_pid_params("fire.trigger_spd_pid", trigger_spd_pid);
+
+        referee_timeout_s = cfg.get_double("fire", "referee_timeout_s", referee_timeout_s);
+    }
+};
+
+}  // namespace universal_controller

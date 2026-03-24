@@ -1,0 +1,26 @@
+# GimbalControl.action
+# 云台控制 Action - 供导航/行为树调用
+
+# ===== Goal =====
+float64 target_yaw_rad       # 目标 Yaw 角 (弧度)
+float64 target_pitch_deg     # 目标 Pitch 角 (度)
+bool track_target            # 是否持续跟踪目标（直到被取消）
+bool relative_mode           # true=相对当前角度, false=绝对角度
+float64 timeout_sec          # 超时时间 (秒)，0表示无限等待
+
+---
+
+# ===== Result =====
+bool success                 # 是否成功到达目标
+float64 final_yaw_rad        # 最终 Yaw 角
+float64 final_pitch_deg      # 最终 Pitch 角
+float64 elapsed_time_sec     # 耗时
+
+---
+
+# ===== Feedback =====
+float64 current_yaw_rad      # 当前 Yaw 角
+float64 current_pitch_deg    # 当前 Pitch 角
+float64 yaw_error            # Yaw 误差
+float64 pitch_error          # Pitch 误差
+bool tracking                # 是否正在跟踪

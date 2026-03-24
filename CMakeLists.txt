@@ -1,8 +1,8 @@
 # 指定CMake的最低版本要求
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 
 # 定义包名
-project(universal_controller)
+project(universal_controller_framework)
 
 # 配置C++编译选项（启用C++17，添加警告）
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -13,45 +13,111 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 查找依赖包（核心依赖+可选依赖）
-find_package(ament_cmake REQUIRED)          # ROS2核心构建工具
-find_package(rclcpp REQUIRED)               # ROS2 C++客户端库
-find_package(sensor_msgs REQUIRED)          # 传感器消息类型
-find_package(rcl_interfaces REQUIRED)       # ROS2接口定义
-find_package(geometry_msgs REQUIRED)        # 几何消息类型
-find_package(std_msgs REQUIRED)             # 标准消息类型
-find_package(ament_copyright REQUIRED)      # 版权信息工具
-find_package(ament_lint_auto REQUIRED)      # 自动代码检查工具
-find_package(ament_lint_common REQUIRED)    # 常见代码检查工具
-find_package(ament_cmake_gtest REQUIRED)    # CMake GTest 工具
-find_package(ament_cmake_pytest REQUIRED)   # CMake PyTest 工具
+# ========== 查找依赖包 ==========
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(custom_msgs REQUIRED)
+find_package(sp_msgs REQUIRED)
 
-
-# 包含头文件目录
-include_directories(
-  include  
+# ========== 消息/Action 生成 ==========
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/UnifiedInput.msg"
+  "action/GimbalControl.action"
+  "action/FireControl.action"
+  DEPENDENCIES std_msgs geometry_msgs
 )
 
-# 编译节点
-add_executable(
+# ========== 包含目录 ==========
+include_directories(include)
 
+# ========== 源文件列表 ==========
+set(HUB_SOURCES
+  src/main.cpp
+  src/hub/hub.cpp
 )
 
-ament_target_dependencies(
-  universal_controller_node
+set(RC_INTERPRETER_SOURCES
+  src/rc_interpreter_node.cpp
+  src/interpreters/rc_interpreter.cpp
+)
+
+set(CONTROLLER_SOURCES
+  src/controllers/chassis_controller.cpp
+  src/controllers/gimbal_controller.cpp
+  src/controllers/fire_controller.cpp
+)
+
+set(TOOL_SOURCES
+  src/tools/swerve_kinematics.cpp
+)
+
+# ========== Main Hub Node ==========
+add_executable(universal_controller_node
+  ${HUB_SOURCES}
+  ${CONTROLLER_SOURCES}
+  ${TOOL_SOURCES}
+)
+
+ament_target_dependencies(universal_controller_node
   rclcpp
+  rclcpp_action
   sensor_msgs
-  rcl_interfaces
   geometry_msgs
   std_msgs
+  custom_msgs
+  sp_msgs
 )
 
+rosidl_target_interfaces(universal_controller_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
 
-# 安装config目录下的yaml配置文件
+# ========== RC Interpreter Node ==========
+add_executable(rc_interpreter_node
+  ${RC_INTERPRETER_SOURCES}
+)
+
+ament_target_dependencies(rc_interpreter_node
+  rclcpp
+  geometry_msgs
+  std_msgs
+  custom_msgs
+)
+
+rosidl_target_interfaces(rc_interpreter_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
+
+# ========== 安装 ==========
+install(TARGETS
+  universal_controller_node
+  rc_interpreter_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
+  PATTERN "*.py"
+)
+
 install(DIRECTORY config/
   DESTINATION share/${PROJECT_NAME}/config
-  PATTERN "*.yaml"  # 只安装yaml配置文件
+  PATTERN "*.yaml"
 )
 
+# ========== 测试 ==========
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
 ament_package()
