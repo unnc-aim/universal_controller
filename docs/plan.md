@@ -2,7 +2,7 @@
 
 ## Context
 
-重构 `universal_controller_framework` 为统一的 C++ 控制器框架，整合 `infantry_controller` 和 `sentry_controller` 的功能。
+重构 `universal_controller` 为统一的 C++ 控制器框架，整合 `infantry_controller` 和 `sentry_controller` 的功能。
 
 **目标：**
 
@@ -75,7 +75,7 @@ flowchart TB
 | `action/GimbalControl.action` | 云台控制 Action（导航/行为树使用） |
 | `action/FireControl.action` | 发射控制 Action |
 
-### 3. Core Headers (include/universal_controller_framework/)
+### 3. Core Headers (include/universal_controller/)
 
 | File | Purpose |
 |------|---------|

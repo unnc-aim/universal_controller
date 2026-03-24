@@ -13,7 +13,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     # 获取包路径
-    pkg_dir = get_package_share_directory('universal_controller_framework')
+    pkg_dir = get_package_share_directory('universal_controller')
     config_file = os.path.join(pkg_dir, 'config', 'controller_params.yaml')
 
     return LaunchDescription([
@@ -31,7 +31,7 @@ def generate_launch_description():
 
         # RC Interpreter Node (独立节点)
         Node(
-            package='universal_controller_framework',
+            package='universal_controller',
             executable='rc_interpreter_node',
             name='rc_interpreter',
             parameters=[LaunchConfiguration('config_file')],
@@ -40,7 +40,7 @@ def generate_launch_description():
 
         # Main Hub Node
         Node(
-            package='universal_controller_framework',
+            package='universal_controller',
             executable='universal_controller_node',
             name='universal_controller_hub',
             parameters=[LaunchConfiguration('config_file')],

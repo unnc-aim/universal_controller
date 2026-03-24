@@ -4,9 +4,10 @@
  */
 
 #include <rclcpp/rclcpp.hpp>
-#include "universal_controller_framework/interpreters/rc_interpreter.hpp"
+#include "universal_controller/interpreters/rc_interpreter.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     rclcpp::init(argc, argv);
 
     auto interpreter = std::make_shared<universal_controller::RCInterpreter>();

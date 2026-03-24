@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # 定义包名
-project(universal_controller_framework)
+project(universal_controller)
 
 # 配置C++编译选项（启用C++17，添加警告）
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")

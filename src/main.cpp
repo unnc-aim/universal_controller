@@ -4,9 +4,10 @@
  */
 
 #include <rclcpp/rclcpp.hpp>
-#include "universal_controller_framework/hub/hub.hpp"
+#include "universal_controller/hub/hub.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     rclcpp::init(argc, argv);
 
     auto hub = std::make_shared<universal_controller::Hub>();

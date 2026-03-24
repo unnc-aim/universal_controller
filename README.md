@@ -146,27 +146,27 @@ universal_controller:
 
 ```bash
 cd ~/ros2_ws
-colcon build --packages-select universal_controller_framework
+colcon build --packages-select universal_controller
 source install/setup.bash
 ```
 
 ## 运行
 
 ```bash
-ros2 launch universal_controller_framework universal_controller.launch.py
+ros2 launch universal_controller universal_controller.launch.py
 ```
 
 ## 文件结构
 
 ```
-universal_controller_framework/
+universal_controller/
 ├── CMakeLists.txt
 ├── package.xml
 ├── config/controller_params.yaml
 ├── launch/universal_controller.launch.py
 ├── msg/UnifiedInput.msg
 ├── action/GimbalControl.action, FireControl.action
-├── include/universal_controller_framework/
+├── include/universal_controller/
 │   ├── common/types.hpp, config.hpp
 │   ├── controllers/*.hpp
 │   ├── interpreters/*.hpp
