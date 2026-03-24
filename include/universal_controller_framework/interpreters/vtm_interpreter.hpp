@@ -18,9 +18,9 @@
 
 #include "custom_msgs/msg/read_vt13_remote_control.hpp"
 #include "universal_controller_framework/msg/unified_input.hpp"
+#include "universal_controller_framework/tools/input_processor.hpp"
 
 #include <memory>
-#include <cmath>
 #include <string>
 
 namespace universal_controller {
@@ -32,10 +32,10 @@ public:
 
 private:
     void declare_parameters();
+    void load_parameters();
     void cb_rc(const custom_msgs::msg::ReadVT13RemoteControl::SharedPtr msg);
     void process_input();
     void publish_unified();
-    double clamp(double value, double min_val, double max_val);
 
     // 订阅
     rclcpp::Subscription<custom_msgs::msg::ReadVT13RemoteControl>::SharedPtr sub_rc_;
@@ -53,43 +53,20 @@ private:
     // 输出
     msg::UnifiedInput unified_output_;
 
-    // 速度模式
-    double current_spd_mode_{3000.0};
+    // 输入处理器
+    InputProcessor input_processor_;
+    InputProcessorConfig input_config_;
 
     // 小陀螺模式
     bool spin_mode_enabled_{false};
-    double spin_spd_{3000.0};
     uint8_t last_left_switch_{0};
     uint8_t last_right_switch_{0};
     bool last_v_pressed_{false};
     bool nav_mode_enabled_{false};
 
-    // 云台目标
-    double target_pitch_deg_{0.0};
-    double target_yaw_rad_{0.0};
-
     // 参数
     std::string topic_rc_read_;
     std::string topic_unified_output_;
-
-    double spin_spd_default_{3000.0};
-    double spin_spd_min_{800.0};
-    double spin_spd_max_{6500.0};
-    double spin_dial_gain_per_tick_{6.0};
-    double spin_key_gain_per_tick_{2.4};
-    double spin_dial_deadband_{0.05};
-
-    // 鼠标参数
-    double mouse_sensitivity_{1.0};
-    double mouse_yaw_gain_{0.75};
-    double mouse_pitch_gain_{1.0};
-    double mouse_limit_{100.0};
-    double pitch_gain_coeff_{0.00005 * (180.0 / M_PI)};
-    double yaw_gain_coeff_{10.0 * M_PI * 0.001 * 0.0025};
-
-    // Pitch 限位
-    double pitch_min_deg_{-25.0};
-    double pitch_max_deg_{40.0};
 
     rclcpp::QoS qos_best_effort_{rclcpp::QoS(1).best_effort()};
 };
