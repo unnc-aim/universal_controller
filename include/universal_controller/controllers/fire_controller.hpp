@@ -27,18 +27,6 @@ namespace universal_controller
 {
 
     /**
-     * @brief 发射指令结构体
-     */
-    struct FireCommand
-    {
-        bool friction_on{false};
-        bool trigger_fire{false};
-        bool burst_mode{false};
-        double friction_speed{6500.0};
-        bool from_action{false};
-    };
-
-    /**
      * @brief 发射控制器
      */
     class FireController : public BaseController

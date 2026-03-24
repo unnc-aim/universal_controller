@@ -17,7 +17,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/qos.hpp>
 
-#include "custom_msgs/msg/read_dji_rc.hpp"
+#include "custom_msgs/msg/read_djirc.hpp"
 #include "universal_controller/msg/unified_input.hpp"
 #include "universal_controller/tools/input_processor.hpp"
 

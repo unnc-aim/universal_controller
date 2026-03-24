@@ -19,6 +19,7 @@
 #include "custom_msgs/msg/write_dji_motor.hpp"
 #include "custom_msgs/msg/read_dji_motor.hpp"
 #include "custom_msgs/msg/read_lk_motor.hpp"
+#include "custom_msgs/msg/read_lk_motor_multi.hpp"
 #include "custom_msgs/msg/write_lk_motor_broadcast_current_control.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
@@ -93,6 +94,8 @@ namespace universal_controller
         std::array<uint16_t, 4> current_steer_ecds_{0, 0, 0, 0};
         std::array<double, 4> current_steer_speeds_{0, 0, 0, 0};
         std::array<double, 4> current_drive_speeds_{0, 0, 0, 0};
+        std::array<uint16_t, 4> target_steer_ecds_{0, 0, 0, 0};
+        std::array<double, 4> target_drive_speeds_{0, 0, 0, 0};
 
         // Yaw 电机角度
         double gimbal_yaw_angle_{0.0};

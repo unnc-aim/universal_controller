@@ -10,12 +10,9 @@
 namespace universal_controller
 {
 
-    Hub::Hub() : Node("universal_controller_hub")
+    Hub::Hub() : Node("universal_controller_hub"), config_loader_(this)
     {
         declare_parameters();
-
-        // 初始化配置加载器
-        config_loader_ = ConfigLoader(this);
 
         // 加载各控制器配置
         chassis_config_.load(config_loader_);
@@ -160,7 +157,7 @@ namespace universal_controller
         }
 
         // 1. 急停最高优先级
-        if (unified_input_->emergency_stop || !unified_input_->rc_connected)
+        if (unified_input_->emergency_stop || !unified_input_->connected)
         {
             return ControlMode::EMERGENCY_STOP;
         }
@@ -235,10 +232,10 @@ namespace universal_controller
         else
         {
             // 手动模式：使用遥控器输入
-            gimbal_cmd.pitch_deg = unified_input_->target_pitch;
-            gimbal_cmd.yaw_rad = unified_input_->target_yaw;
+            gimbal_cmd.pitch_deg = unified_input_->pitch_delta;
+            gimbal_cmd.yaw_rad = unified_input_->yaw_delta;
             gimbal_cmd.autoaim_enabled = false;
-            gimbal_cmd.absolute = !unified_input_->gimbal_absolute;
+            gimbal_cmd.absolute = false;
         }
         gimbal_->set_command(gimbal_cmd);
 

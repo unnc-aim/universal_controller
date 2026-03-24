@@ -28,18 +28,6 @@ namespace universal_controller
 {
 
     /**
-     * @brief 云台指令结构体
-     */
-    struct GimbalCommand
-    {
-        double pitch_deg{0.0};
-        double yaw_rad{0.0};
-        bool autoaim_enabled{false};
-        bool from_action{false};
-        bool absolute{true};
-    };
-
-    /**
      * @brief 云台控制器
      */
     class GimbalController : public BaseController

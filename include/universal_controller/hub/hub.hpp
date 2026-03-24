@@ -65,6 +65,8 @@ namespace universal_controller
         // ========== 模式仲裁 ==========
         ControlMode arbitrate_mode();
         void dispatch_commands();
+        void dispatch_manual_or_autoaim();
+        void dispatch_navigation();
 
         // ========== Action Server 回调 ==========
         rclcpp_action::GoalResponse handle_gimbal_goal(

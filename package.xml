@@ -8,6 +8,9 @@
   <license>TODO</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+
   <depend>rclcpp</depend>
   <depend>custom_msgs</depend>
 
@@ -22,6 +25,8 @@
   <test_depend>ament_lint_common</test_depend>  <!-- 通用 lint 工具（C++/Python） -->
   <test_depend>ament_cmake_gtest</test_depend>  <!-- C++ 单元测试框架（GTest） -->
   <test_depend>ament_cmake_pytest</test_depend> <!-- 可选：如果混合 Python 测试 -->
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -42,10 +42,12 @@ set(HUB_SOURCES
 )
 
 set(VTM_INTERPRETER_SOURCES
+  src/interpreters/vtm_interpreter_node.cpp
   src/interpreters/vtm_interpreter.cpp
 )
 
 set(NDJ_INTERPRETER_SOURCES
+  src/interpreters/ndj_interpreter_node.cpp
   src/interpreters/ndj_interpreter.cpp
 )
 
@@ -76,8 +78,11 @@ ament_target_dependencies(universal_controller_node
   sp_msgs
 )
 
-rosidl_target_interfaces(universal_controller_node
+rosidl_get_typesupport_target(universal_controller_node_typesupport
   ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
+target_link_libraries(universal_controller_node
+  ${universal_controller_node_typesupport}
 )
 
 # ========== VTM Interpreter Node ==========
@@ -91,8 +96,11 @@ ament_target_dependencies(vtm_interpreter_node
   custom_msgs
 )
 
-rosidl_target_interfaces(vtm_interpreter_node
+rosidl_get_typesupport_target(vtm_interpreter_node_typesupport
   ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
+target_link_libraries(vtm_interpreter_node
+  ${vtm_interpreter_node_typesupport}
 )
 
 # ========== NDJ Interpreter Node ==========
@@ -106,8 +114,11 @@ ament_target_dependencies(ndj_interpreter_node
   custom_msgs
 )
 
-rosidl_target_interfaces(ndj_interpreter_node
+rosidl_get_typesupport_target(ndj_interpreter_node_typesupport
   ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
+target_link_libraries(ndj_interpreter_node
+  ${ndj_interpreter_node_typesupport}
 )
 
 # ========== 安装 ==========

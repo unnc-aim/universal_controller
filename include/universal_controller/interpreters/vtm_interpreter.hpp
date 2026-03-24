@@ -16,7 +16,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/qos.hpp>
 
-#include "custom_msgs/msg/read_vt13_remote_control.hpp"
+#include "custom_msgs/msg/read_djirc.hpp"
 #include "universal_controller/msg/unified_input.hpp"
 #include "universal_controller/tools/input_processor.hpp"
 
@@ -35,12 +35,12 @@ namespace universal_controller
     private:
         void declare_parameters();
         void load_parameters();
-        void cb_rc(const custom_msgs::msg::ReadVT13RemoteControl::SharedPtr msg);
+        void cb_rc(const custom_msgs::msg::ReadDJIRC::SharedPtr msg);
         void process_input();
         void publish_unified();
 
         // 订阅
-        rclcpp::Subscription<custom_msgs::msg::ReadVT13RemoteControl>::SharedPtr sub_rc_;
+        rclcpp::Subscription<custom_msgs::msg::ReadDJIRC>::SharedPtr sub_rc_;
 
         // 发布
         rclcpp::Publisher<msg::UnifiedInput>::SharedPtr pub_unified_;
@@ -49,7 +49,7 @@ namespace universal_controller
         rclcpp::TimerBase::SharedPtr timer_;
 
         // 原始数据
-        custom_msgs::msg::ReadVT13RemoteControl::SharedPtr raw_rc_data_;
+        custom_msgs::msg::ReadDJIRC::SharedPtr raw_rc_data_;
         bool connected_{false};
 
         // 输出

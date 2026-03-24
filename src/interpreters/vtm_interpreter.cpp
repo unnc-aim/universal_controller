@@ -15,8 +15,8 @@ namespace universal_controller
         declare_parameters();
         load_parameters();
 
-        // 订阅 VTM 遥控器 (ReadVT13RemoteControl)
-        sub_rc_ = this->create_subscription<custom_msgs::msg::ReadVT13RemoteControl>(
+        // 订阅遥控器 (ReadDJIRC)
+        sub_rc_ = this->create_subscription<custom_msgs::msg::ReadDJIRC>(
             topic_rc_read_, qos_best_effort_,
             std::bind(&VTMInterpreter::cb_rc, this, std::placeholders::_1));
 
@@ -33,7 +33,7 @@ namespace universal_controller
         unified_output_.control_source = "VTM";
         unified_output_.connected = false;
 
-        RCLCPP_INFO(this->get_logger(), "VTM Interpreter started (ReadVT13RemoteControl)");
+        RCLCPP_INFO(this->get_logger(), "VTM Interpreter started (ReadDJIRC)");
     }
 
     void VTMInterpreter::declare_parameters()
@@ -100,7 +100,7 @@ namespace universal_controller
         input_processor_.update_config(input_config_);
     }
 
-    void VTMInterpreter::cb_rc(const custom_msgs::msg::ReadVT13RemoteControl::SharedPtr msg)
+    void VTMInterpreter::cb_rc(const custom_msgs::msg::ReadDJIRC::SharedPtr msg)
     {
         raw_rc_data_ = msg;
         connected_ = (msg->online == 1);
