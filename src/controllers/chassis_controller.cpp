@@ -139,6 +139,7 @@ namespace universal_controller
 
     void ChassisController::compute_control(double dt)
     {
+        (void)dt;
         // 死区检测
         if (std::abs(command_.vx_gimbal) < 100.0 &&
             std::abs(command_.vy_gimbal) < 100.0 &&

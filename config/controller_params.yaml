@@ -28,11 +28,11 @@
         wheel_track: 0.372
         wheel_base: 0.372
         ecd_zeros: [7411, 7530, 3419, 2051]
-        topic_drive_write: '/ecat/sn4587586/app1/write'
-        topic_drive_read: '/ecat/sn4587586/app1/read'
-        topic_steer_write: '/ecat/sn4587586/app2/write'
-        topic_steer_read: '/ecat/sn4587586/app2/read'
-        topic_yaw_read: '/ecat/sn4587586/app3/read'
+        topic_drive_write: '/ecat/sn2228292/app1/write'
+        topic_drive_read: '/ecat/sn2228292/app1/read'
+        topic_steer_write: '/ecat/sn2228292/app2/write'
+        topic_steer_read: '/ecat/sn2228292/app2/read'
+        topic_yaw_read: '/ecat/sn4128829/app1/read'
         spin_speed_default: 3000.0
         spin_speed_min: 800.0
         spin_speed_max: 6500.0
@@ -46,11 +46,11 @@
         pitch_min_deg: -25.0
         pitch_max_deg: 40.0
         mouse_sensitivity: 1.0
-        topic_pitch_write: '/ecat/sn4587585/app4/write'
-        topic_pitch_read: '/ecat/sn4587585/app4/read'
-        topic_yaw_write: '/ecat/sn4587586/app3/write'
-        topic_yaw_read: '/ecat/sn4587586/app3/read'
-        topic_imu_read: '/ecat/sn4587585/app2/read'
+        topic_pitch_write: '/ecat/sn4653115/app4/write'
+        topic_pitch_read: '/ecat/sn4653115/app4/read'
+        topic_yaw_write: '/ecat/sn4128829/app1/write'
+        topic_yaw_read: '/ecat/sn4128829/app1/read'
+        topic_imu_read: '/ecat/sn4653115/app2/read'
         topic_autoaim_cmd: '/sp_vision/autoaim_command'
         autoaim_timeout_s: 0.2
         # Yaw 级联 PID
@@ -59,12 +59,12 @@
 
       fire:
         enabled: true
-        friction_speed_default: 6500
+        friction_speed_default: 6500.0
         shot_period_ms: 30.0
         load_current_threshold: 500
         load_speed_ecd: 2.5
-        topic_fire_write: '/ecat/sn4587585/app3/write'
-        topic_fire_read: '/ecat/sn4587585/app3/read'
+        topic_fire_write: '/ecat/sn4653115/app3/write'
+        topic_fire_read: '/ecat/sn4653115/app3/read'
         referee_timeout_s: 0.5
         # 拨盘串级 PID
         trigger_pos_pid: [0.4, 0.0, 7.0, 13000.0, 1500.0]
@@ -72,8 +72,8 @@
 
     # ========== RC Interpreter 配置（并入同一参数树） ==========
     rc_interpreter:
-      topic_vtm_rc: '/ecat/sn4587585/app1/read'
-      topic_ndj_rc: '/ecat/ndj_rc'
+      topic_vtm_rc: '/ecat/sn4653115/app5/read'
+      topic_ndj_rc: '/ecat/sn4653115/app1/read'
       topic_unified_output: '/universal_controller/unified_input'
       connection_timeout_s: 0.5
 

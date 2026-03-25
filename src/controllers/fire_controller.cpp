@@ -119,6 +119,7 @@ namespace universal_controller
 
     void FireController::update_state_machine(double dt)
     {
+        (void)dt;
         double now = node_->now().seconds();
         bool fire_locked = referee_.is_valid(now, config_.referee_timeout_s) && !referee_.fire_allowed;
 

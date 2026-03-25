@@ -30,25 +30,37 @@ namespace universal_controller
 
         int get_int(const std::string &name, int default_val = 0) const
         {
-            node_->declare_parameter(name, default_val);
+            if (!node_->has_parameter(name))
+            {
+                node_->declare_parameter(name, default_val);
+            }
             return node_->get_parameter(name).as_int();
         }
 
         double get_double(const std::string &name, double default_val = 0.0) const
         {
-            node_->declare_parameter(name, default_val);
+            if (!node_->has_parameter(name))
+            {
+                node_->declare_parameter(name, default_val);
+            }
             return node_->get_parameter(name).as_double();
         }
 
         std::string get_string(const std::string &name, const std::string &default_val = "") const
         {
-            node_->declare_parameter(name, default_val);
+            if (!node_->has_parameter(name))
+            {
+                node_->declare_parameter(name, default_val);
+            }
             return node_->get_parameter(name).as_string();
         }
 
         bool get_bool(const std::string &name, bool default_val = false) const
         {
-            node_->declare_parameter(name, default_val);
+            if (!node_->has_parameter(name))
+            {
+                node_->declare_parameter(name, default_val);
+            }
             return node_->get_parameter(name).as_bool();
         }
 
@@ -78,19 +90,28 @@ namespace universal_controller
 
         std::vector<int64_t> get_int_array(const std::string &name, const std::vector<int64_t> &default_val = {}) const
         {
-            node_->declare_parameter(name, default_val);
+            if (!node_->has_parameter(name))
+            {
+                node_->declare_parameter(name, default_val);
+            }
             return node_->get_parameter(name).as_integer_array();
         }
 
         std::vector<double> get_double_array(const std::string &name, const std::vector<double> &default_val = {}) const
         {
-            node_->declare_parameter(name, default_val);
+            if (!node_->has_parameter(name))
+            {
+                node_->declare_parameter(name, default_val);
+            }
             return node_->get_parameter(name).as_double_array();
         }
 
         std::vector<std::string> get_string_array(const std::string &name, const std::vector<std::string> &default_val = {}) const
         {
-            node_->declare_parameter(name, default_val);
+            if (!node_->has_parameter(name))
+            {
+                node_->declare_parameter(name, default_val);
+            }
             return node_->get_parameter(name).as_string_array();
         }
 

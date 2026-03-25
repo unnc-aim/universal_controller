@@ -75,6 +75,7 @@ namespace universal_controller
 
     void GimbalController::update(double dt)
     {
+        (void)dt;
         if (!command_valid_)
         {
             return;
@@ -103,6 +104,7 @@ namespace universal_controller
 
     void GimbalController::cb_pitch_feedback(const custom_msgs::msg::ReadDJIMotor::SharedPtr msg)
     {
+        (void)msg;
         // Pitch 电机反馈（可用于前馈）
     }
 
