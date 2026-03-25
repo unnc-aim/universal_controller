@@ -39,3 +39,10 @@
 
 # debug information files
 *.dwo
+.vscode/browse.vc.db
+.gitignore
+.vscode/browse.vc.db-wal
+.vscode/browse.vc.db-shm
+.vscode/c_cpp_properties.json
+.gitignore
+.vscode/settings.json

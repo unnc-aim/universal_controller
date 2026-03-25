@@ -1,0 +1,111 @@
+# NDJ Trigger Definition (Sentry)
+# 设计目标:
+# - 2 x 3: 左右两个 trigger 的 3 个停靠点
+# - 2 x 4: 左右两个 trigger 的 4 个停靠点切换瞬间
+# - 1: 遥控器滚轮配置点
+#
+# 规则:
+# - 所有动作默认 false
+# - 只有填写并设为 true 的动作才会生效
+
+ndj_trigger_def:
+  version: 1
+
+  # 供解析器参考: 可选动作全集（说明用途，实际执行以各配置点 true 为准）
+  # action_schema:
+  #   emergency_stop: [on, off, toggle]
+  #   autoaim: [on, off, toggle]
+  #   nav_topic: [on, off, toggle]
+  #   behavior_tree_topic: [on, off, toggle]
+  #   friction_wheel: [on, off, toggle]
+  #   feeder: [single_once, burst_on, burst_off, burst_toggle]
+  #   spin_mode: [on, off, toggle]
+  #   spin_control: [switch_toggle, accelerate, decelerate]
+
+  # 左 trigger: 3 个停靠点 + 4 个切换瞬间
+  left_trigger:
+    dock_points:
+      up:
+        actions:
+          emergency_stop: {off: true}
+          autoaim: {on: true}
+      mid:
+        actions:
+          emergency_stop: {off: true}
+          autoaim: {off: true}
+      down:
+        actions:
+          emergency_stop: {on: true}
+          autoaim: {off: true}
+
+    transitions:
+      mid_to_up:
+        actions:
+          spin_mode: {toggle: true}
+
+  right_trigger:
+    dock_points:
+      up:
+        actions:
+          nav_topic: {on: true}
+          behavior_tree_topic: {on: true}
+          friction_wheel: {on: true}
+          feeder:
+            continuous_start: true
+      mid:
+        actions:
+          nav_topic: {on: true}
+          behavior_tree_topic: {on: true}
+          friction_wheel: {on: true}
+          feeder:
+            continuous_start: true
+      down:
+        actions:
+          nav_topic: {off: true}
+          behavior_tree_topic: {off: true}
+          friction_wheel: {off: true}
+          feeder:
+            continuous_stop: true
+        
+
+    transitions:
+      up_to_mid:
+        actions:
+          nav_topic: {off: true}
+          behavior_tree_topic: {off: true}
+          friction_wheel: {off: true}
+          feeder:
+            continuous_stop: true
+      mid_to_up:
+        actions:
+          nav_topic: {on: true}
+          behavior_tree_topic: {on: true}
+          friction_wheel: {on: true}
+          feeder:
+            continuous_start: true
+      down_to_mid:
+        actions:
+          nav_topic: {on: true}
+          behavior_tree_topic: {on: true}
+          friction_wheel: {on: true}
+          feeder:
+            continuous_start: true
+      mid_to_down:
+        actions:
+          nav_topic: {off: true}
+          behavior_tree_topic: {off: true}
+          friction_wheel: {off: true}
+          feeder:
+            continuous_stop: true
+
+  dial_up:
+    threshold: 0.5
+    actions:
+      spin_control:
+        accelerate: true
+
+  dial_down:
+    threshold: 0.5
+    actions:
+      spin_control:
+        decelerate: true

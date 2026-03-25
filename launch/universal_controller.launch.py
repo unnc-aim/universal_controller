@@ -36,7 +36,6 @@ def generate_launch_description():
         Node(
             package='universal_controller',
             executable='universal_controller_node',
-            name='universal_controller',
             parameters=[LaunchConfiguration('config_file')],
             output='screen',
         ),

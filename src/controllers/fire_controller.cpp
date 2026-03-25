@@ -131,7 +131,7 @@ namespace universal_controller
             {
                 feeder_state_ = FeederState::LOADING;
                 burst_mode_ = command_.burst_mode;
-                RCLCPP_INFO(node_->get_logger(), "Fire: LOADING");
+                // RCLCPP_INFO(node_->get_logger(), "Fire: LOADING");
             }
             break;
 
@@ -139,7 +139,7 @@ namespace universal_controller
             if (fire_locked || std::abs(motor3_current_) > config_.load_current_threshold)
             {
                 feeder_state_ = FeederState::READY;
-                RCLCPP_INFO(node_->get_logger(), "Fire: READY");
+                // RCLCPP_INFO(node_->get_logger(), "Fire: READY");
             }
             else
             {

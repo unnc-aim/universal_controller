@@ -17,12 +17,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(custom_msgs REQUIRED)
 find_package(sp_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # ========== 消息/Action 生成 ==========
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -72,6 +74,7 @@ add_executable(universal_controller_node
 ament_target_dependencies(universal_controller_node
   rclcpp
   rclcpp_action
+  ament_index_cpp
   sensor_msgs
   geometry_msgs
   std_msgs
@@ -84,6 +87,7 @@ rosidl_get_typesupport_target(universal_controller_node_typesupport
 )
 target_link_libraries(universal_controller_node
   ${universal_controller_node_typesupport}
+  yaml-cpp
 )
 
 # ========== 安装 ==========
