@@ -39,8 +39,8 @@ namespace universal_controller
     void VTMInterpreter::declare_parameters()
     {
         // 话题
-        this->declare_parameter("rc_interpreter.topic_vtm_rc", "/ecat/sn4653115/app1/read");
-        this->declare_parameter("rc_interpreter.topic_unified_output", "/universal_controller/unified_input");
+        this->declare_parameter("rc_interpreter.topic_vtm_rc", "/ecat/sn4653115/app5/read");
+        this->declare_parameter("rc_interpreter.topic_vtm_output", "/universal_controller/input/vtm");
 
         // 输入处理器参数
         this->declare_parameter("rc_interpreter.joystick_max_output", 8000.0);
@@ -70,7 +70,7 @@ namespace universal_controller
     void VTMInterpreter::load_parameters()
     {
         topic_rc_read_ = this->get_parameter("rc_interpreter.topic_vtm_rc").as_string();
-        topic_unified_output_ = this->get_parameter("rc_interpreter.topic_unified_output").as_string();
+        topic_unified_output_ = this->get_parameter("rc_interpreter.topic_vtm_output").as_string();
 
         // 加载输入处理器配置
         input_config_.joystick_max_output = this->get_parameter("rc_interpreter.joystick_max_output").as_double();

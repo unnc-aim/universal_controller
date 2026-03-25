@@ -46,8 +46,14 @@ namespace universal_controller
         using FireControlResult = FireControl::Result;
         using FireControlFeedback = FireControl::Feedback;
 
-        Hub();
+        Hub(std::shared_ptr<ChassisController> chassis,
+            std::shared_ptr<GimbalController> gimbal,
+            std::shared_ptr<FireController> fire);
         ~Hub() override = default;
+
+        rclcpp::Node::SharedPtr get_chassis_node() const { return chassis_node_; }
+        rclcpp::Node::SharedPtr get_gimbal_node() const { return gimbal_node_; }
+        rclcpp::Node::SharedPtr get_fire_node() const { return fire_node_; }
 
     private:
         // ========== 参数 ==========
@@ -90,9 +96,14 @@ namespace universal_controller
             const std::shared_ptr<rclcpp_action::ServerGoalHandle<FireControl>> goal_handle);
 
         // ========== 控制器 ==========
-        std::unique_ptr<ChassisController> chassis_;
-        std::unique_ptr<GimbalController> gimbal_;
-        std::unique_ptr<FireController> fire_;
+        std::shared_ptr<ChassisController> chassis_;
+        std::shared_ptr<GimbalController> gimbal_;
+        std::shared_ptr<FireController> fire_;
+
+        // 控制器独立 ROS 节点
+        rclcpp::Node::SharedPtr chassis_node_;
+        rclcpp::Node::SharedPtr gimbal_node_;
+        rclcpp::Node::SharedPtr fire_node_;
 
         // ========== 配置 ==========
         ConfigLoader config_loader_;

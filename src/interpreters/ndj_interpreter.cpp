@@ -39,8 +39,8 @@ namespace universal_controller
     void NDJInterpreter::declare_parameters()
     {
         // 话题
-        this->declare_parameter("rc_interpreter.topic_ndj_rc", "/ecat/sn4587585/app1/read");
-        this->declare_parameter("rc_interpreter.topic_unified_output", "/universal_controller/unified_input");
+        this->declare_parameter("rc_interpreter.topic_ndj_rc", "/ecat/sn4653115/app1/read");
+        this->declare_parameter("rc_interpreter.topic_ndj_output", "/universal_controller/input/ndj");
 
         // 连接超时
         this->declare_parameter("rc_interpreter.connection_timeout_s", 0.5);
@@ -73,7 +73,7 @@ namespace universal_controller
     void NDJInterpreter::load_parameters()
     {
         topic_rc_read_ = this->get_parameter("rc_interpreter.topic_ndj_rc").as_string();
-        topic_unified_output_ = this->get_parameter("rc_interpreter.topic_unified_output").as_string();
+        topic_unified_output_ = this->get_parameter("rc_interpreter.topic_ndj_output").as_string();
         connection_timeout_s_ = this->get_parameter("rc_interpreter.connection_timeout_s").as_double();
 
         // 加载输入处理器配置

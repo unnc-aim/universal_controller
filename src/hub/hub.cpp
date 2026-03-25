@@ -6,13 +6,31 @@
 #include "universal_controller/hub/hub.hpp"
 #include <nlohmann/json.hpp>
 #include <cmath>
+#include <stdexcept>
 
 namespace universal_controller
 {
 
-    Hub::Hub() : Node("universal_controller_hub"), config_loader_(this)
+    Hub::Hub(std::shared_ptr<ChassisController> chassis,
+             std::shared_ptr<GimbalController> gimbal,
+             std::shared_ptr<FireController> fire)
+        : Node("universal_controller_hub"),
+          chassis_(std::move(chassis)),
+          gimbal_(std::move(gimbal)),
+          fire_(std::move(fire)),
+          config_loader_(this)
     {
         declare_parameters();
+
+        if (!chassis_ || !gimbal_ || !fire_)
+        {
+            throw std::invalid_argument("Hub requires non-null chassis, gimbal, and fire controllers");
+        }
+
+        // 控制器节点独立出来，便于在 main 中作为单独节点统一注册。
+        chassis_node_ = std::make_shared<rclcpp::Node>("chassis_controller_node");
+        gimbal_node_ = std::make_shared<rclcpp::Node>("gimbal_controller_node");
+        fire_node_ = std::make_shared<rclcpp::Node>("fire_controller_node");
 
         // 加载各控制器配置
         chassis_config_.load(config_loader_);
@@ -20,17 +38,14 @@ namespace universal_controller
         fire_config_.load(config_loader_);
 
         // 初始化控制器
-        chassis_ = std::make_unique<ChassisController>();
-        chassis_->init(this, config_loader_);
+        chassis_->init(chassis_node_.get(), config_loader_);
 
-        gimbal_ = std::make_unique<GimbalController>();
-        gimbal_->init(this, config_loader_);
+        gimbal_->init(gimbal_node_.get(), config_loader_);
 
-        fire_ = std::make_unique<FireController>();
-        fire_->init(this, config_loader_);
+        fire_->init(fire_node_.get(), config_loader_);
 
-        // 订阅统一输入
-        std::string topic_unified = config_loader_.get_string("topics.unified_input", "/universal_controller/unified_input");
+        // 订阅 RC Hub 输出的统一输入
+        std::string topic_unified = config_loader_.get_string("topics.unified_input", "/universal_controller/hub/rc_unified_input");
         sub_unified_ = this->create_subscription<msg::UnifiedInput>(
             topic_unified, qos_best_effort_,
             std::bind(&Hub::cb_unified_input, this, std::placeholders::_1));
@@ -73,13 +88,13 @@ namespace universal_controller
 
         last_update_time_ = this->now();
 
-        RCLCPP_INFO(this->get_logger(), "Hub started @ %d Hz", freq);
+        RCLCPP_INFO(this->get_logger(), "Hub started @ %d Hz, unified_input=%s", freq, topic_unified.c_str());
     }
 
     void Hub::declare_parameters()
     {
         this->declare_parameter("control_frequency", 1000);
-        this->declare_parameter("topics.unified_input", "/universal_controller/unified_input");
+        this->declare_parameter("topics.unified_input", "/universal_controller/hub/rc_unified_input");
         this->declare_parameter("topics.autoaim_cmd", "/sp_vision/autoaim_command");
         this->declare_parameter("topics.referee_constraints", "/referee/constraints");
         this->declare_parameter("topics.referee_game_status", "/referee/game_status");

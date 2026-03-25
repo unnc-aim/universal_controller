@@ -39,15 +39,14 @@ include_directories(include)
 set(HUB_SOURCES
   src/main.cpp
   src/hub/hub.cpp
+  src/hub/rc_hub.cpp
 )
 
 set(VTM_INTERPRETER_SOURCES
-  src/interpreters/vtm_interpreter_node.cpp
   src/interpreters/vtm_interpreter.cpp
 )
 
 set(NDJ_INTERPRETER_SOURCES
-  src/interpreters/ndj_interpreter_node.cpp
   src/interpreters/ndj_interpreter.cpp
 )
 
@@ -64,6 +63,8 @@ set(TOOL_SOURCES
 # ========== Main Hub Node ==========
 add_executable(universal_controller_node
   ${HUB_SOURCES}
+  ${VTM_INTERPRETER_SOURCES}
+  ${NDJ_INTERPRETER_SOURCES}
   ${CONTROLLER_SOURCES}
   ${TOOL_SOURCES}
 )
@@ -85,47 +86,9 @@ target_link_libraries(universal_controller_node
   ${universal_controller_node_typesupport}
 )
 
-# ========== VTM Interpreter Node ==========
-add_executable(vtm_interpreter_node
-  ${VTM_INTERPRETER_SOURCES}
-)
-
-ament_target_dependencies(vtm_interpreter_node
-  rclcpp
-  std_msgs
-  custom_msgs
-)
-
-rosidl_get_typesupport_target(vtm_interpreter_node_typesupport
-  ${PROJECT_NAME} "rosidl_typesupport_cpp"
-)
-target_link_libraries(vtm_interpreter_node
-  ${vtm_interpreter_node_typesupport}
-)
-
-# ========== NDJ Interpreter Node ==========
-add_executable(ndj_interpreter_node
-  ${NDJ_INTERPRETER_SOURCES}
-)
-
-ament_target_dependencies(ndj_interpreter_node
-  rclcpp
-  std_msgs
-  custom_msgs
-)
-
-rosidl_get_typesupport_target(ndj_interpreter_node_typesupport
-  ${PROJECT_NAME} "rosidl_typesupport_cpp"
-)
-target_link_libraries(ndj_interpreter_node
-  ${ndj_interpreter_node_typesupport}
-)
-
 # ========== 安装 ==========
 install(TARGETS
   universal_controller_node
-  vtm_interpreter_node
-  ndj_interpreter_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
