@@ -113,6 +113,9 @@ namespace universal_controller
         {
             unified_output_.emergency_stop = true;
             unified_output_.connected = false;
+            unified_output_.friction_on = false;
+            unified_output_.fire_trigger = false;
+            unified_output_.burst_mode = false;
             return;
         }
 
@@ -130,6 +133,9 @@ namespace universal_controller
             unified_output_.wz = 0.0;
             unified_output_.spin_mode = false;
             unified_output_.emergency_stop = (rc.left_switch == 2);
+            unified_output_.friction_on = false;
+            unified_output_.fire_trigger = false;
+            unified_output_.burst_mode = false;
             return;
         }
         unified_output_.emergency_stop = false;
@@ -217,6 +223,10 @@ namespace universal_controller
 
     void VTMInterpreter::publish_unified()
     {
+        if (!raw_rc_data_ || !connected_)
+        {
+            return;
+        }
         unified_output_.header.stamp = this->now();
         pub_unified_->publish(unified_output_);
     }

@@ -108,7 +108,7 @@ namespace universal_controller
     {
         raw_rc_data_ = msg;
         last_rc_time_ = this->now();
-        connected_ = true;
+        connected_ = (msg->online == 1);
         process_input();
     }
 
@@ -128,6 +128,9 @@ namespace universal_controller
         {
             unified_output_.emergency_stop = true;
             unified_output_.connected = false;
+            unified_output_.friction_on = false;
+            unified_output_.fire_trigger = false;
+            unified_output_.burst_mode = false;
             return;
         }
 
@@ -146,6 +149,9 @@ namespace universal_controller
             unified_output_.wz = 0.0;
             unified_output_.spin_mode = false;
             unified_output_.emergency_stop = emergency;
+            unified_output_.friction_on = false;
+            unified_output_.fire_trigger = false;
+            unified_output_.burst_mode = false;
             return;
         }
         unified_output_.emergency_stop = false;
@@ -242,6 +248,11 @@ namespace universal_controller
                 unified_output_.connected = false;
                 unified_output_.emergency_stop = true;
             }
+        }
+
+        if (!raw_rc_data_ || !connected_)
+        {
+            return;
         }
 
         unified_output_.header.stamp = this->now();

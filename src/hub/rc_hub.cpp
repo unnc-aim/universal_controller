@@ -124,10 +124,6 @@ namespace universal_controller
 
         if (!selected.has_value())
         {
-            out.control_source = "none";
-            out.connected = false;
-            out.emergency_stop = true;
-            pub_unified_->publish(out);
             return;
         }
 

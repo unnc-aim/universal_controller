@@ -114,6 +114,8 @@ namespace universal_controller
         // ========== 状态变量 ==========
         ControlMode current_mode_{ControlMode::MANUAL};
         msg::UnifiedInput::SharedPtr unified_input_;
+        rclcpp::Time last_unified_input_time_{0, 0, RCL_ROS_TIME};
+        double unified_input_timeout_s_{0.2};
         sp_msgs::msg::AutoAimCommandMsg::SharedPtr autoaim_cmd_;
         bool autoaim_valid_{false};
         double autoaim_last_time_{0.0};

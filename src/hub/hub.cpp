@@ -95,11 +95,14 @@ namespace universal_controller
     {
         this->declare_parameter("control_frequency", 1000);
         this->declare_parameter("topics.unified_input", "/universal_controller/hub/rc_unified_input");
+        this->declare_parameter("topics.unified_input_timeout_s", 0.2);
         this->declare_parameter("topics.autoaim_cmd", "/sp_vision/autoaim_command");
         this->declare_parameter("topics.referee_constraints", "/referee/constraints");
         this->declare_parameter("topics.referee_game_status", "/referee/game_status");
         this->declare_parameter("autoaim_timeout_s", 0.2);
         this->declare_parameter("referee_timeout_s", 0.5);
+
+        unified_input_timeout_s_ = this->get_parameter("topics.unified_input_timeout_s").as_double();
     }
 
     void Hub::control_loop()
@@ -107,6 +110,12 @@ namespace universal_controller
         auto now = this->now();
         double dt = (now - last_update_time_).seconds();
         last_update_time_ = now;
+
+        if (last_unified_input_time_.nanoseconds() == 0 ||
+            (now - last_unified_input_time_).seconds() > unified_input_timeout_s_)
+        {
+            unified_input_.reset();
+        }
 
         // 模式仲裁
         current_mode_ = arbitrate_mode();
@@ -123,6 +132,7 @@ namespace universal_controller
     void Hub::cb_unified_input(const msg::UnifiedInput::SharedPtr msg)
     {
         unified_input_ = msg;
+        last_unified_input_time_ = this->now();
     }
 
     void Hub::cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg)
