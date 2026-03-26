@@ -248,7 +248,7 @@ vtm_interpreter:
 
 ndj_interpreter:
   ros__parameters:
-    topic_rc_read: '/ecat/sn4587585/app1/read'
+    topic_rc_read: '/ecat/sn4653115/app1/read' # originally sn4587585, but that ec is not present anymore
     topic_unified_output: '/universal_controller/ndj_input'
     connection_timeout_s: 0.5
 ```

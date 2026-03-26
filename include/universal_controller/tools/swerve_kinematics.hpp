@@ -29,7 +29,7 @@ public:
      * @param wheel_base 轴距（长度，单位：米）
      * @param ecd_range 编码器范围（DJI=8192, LK=65536）
      */
-    SwerveKinematics(double wheel_track, double wheel_base, uint16_t ecd_range = 8192);
+    SwerveKinematics(double wheel_track, double wheel_base, uint32_t ecd_range = 8192);
 
     /**
      * @brief 计算四个轮子的速度和舵向角度
@@ -56,15 +56,17 @@ public:
     // Getters
     double wheel_track() const { return wheel_track_; }
     double wheel_base() const { return wheel_base_; }
-    uint16_t ecd_range() const { return ecd_range_; }
+    uint32_t ecd_range() const { return ecd_range_; }
 
 private:
     double wheel_track_;         ///< 轮距 (米)
     double wheel_base_;          ///< 轴距 (米)
-    uint16_t ecd_range_;         ///< 编码器范围
-    uint16_t half_range_;        ///< 编码器半范围
+    uint32_t ecd_range_;         ///< 编码器范围
+    uint32_t half_range_;        ///< 编码器半范围
+    double quarter_range_;       ///< 编码器四分之一范围
     double geometry_factor_;     ///< 几何中心到轮子的距离系数
     double k_;                   ///< 归一化比例系数
+    double steer_hold_speed_epsilon_{1e-3}; ///< 低速时保持舵角阈值
 
     static double clamp(double value, double min_val, double max_val) {
         return std::max(min_val, std::min(max_val, value));

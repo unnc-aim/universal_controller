@@ -194,11 +194,22 @@ namespace universal_controller
         auto msg = custom_msgs::msg::WriteDJIMotor();
 
         // 摩擦轮
-        double friction_cmd = command_.friction_on ? friction_speed_target_ : 0.0;
-        msg.motor1_enable = 1;
-        msg.motor1_cmd = static_cast<int16_t>(friction_cmd);
-        msg.motor2_enable = 1;
-        msg.motor2_cmd = static_cast<int16_t>(-friction_cmd);
+        if (command_.friction_on)
+        {
+            double friction_cmd = friction_speed_target_;
+            msg.motor1_enable = 1;
+            msg.motor1_cmd = static_cast<int16_t>(friction_cmd);
+            msg.motor2_enable = 1;
+            msg.motor2_cmd = static_cast<int16_t>(-friction_cmd);
+        }
+        else
+        {
+            // 关闭摩擦轮时同时撤销使能，避免电机抱死啸叫
+            msg.motor1_enable = 0;
+            msg.motor1_cmd = 0;
+            msg.motor2_enable = 0;
+            msg.motor2_cmd = 0;
+        }
 
         // 拨盘
         double motor3_torque = 0.0;

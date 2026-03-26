@@ -17,7 +17,7 @@
 
     # ========== 电机类型配置 ==========
     motor_type:
-      chassis: 'DJI'      # 'DJI' or 'LK'
+      chassis: 'LK'      # 'DJI' or 'LK'
       gimbal_pitch: 'DJI'
       gimbal_yaw: 'LK'
       fire_trigger: 'DJI'
@@ -25,9 +25,9 @@
     # ========== 控制器配置（合并 chassis/gimbal/fire） ==========
     controllers:
       chassis:
-        wheel_track: 0.372
-        wheel_base: 0.372
-        ecd_zeros: [7411, 7530, 3419, 2051]
+        wheel_track: 0.2746
+        wheel_base: 0.2746
+        ecd_zeros: [5989, 21248, 23534, 1128]
         topic_drive_write: '/ecat/sn2228292/app1/write'
         topic_drive_read: '/ecat/sn2228292/app1/read'
         topic_steer_write: '/ecat/sn2228292/app2/write'
@@ -37,9 +37,9 @@
         spin_speed_min: 800.0
         spin_speed_max: 6500.0
         # LK 电机 PID (仅当 motor_type.chassis='LK' 时使用)
-        steer_angle_pid: [0.3, 0.0, 0.0, 150.0, 300.0]
-        steer_speed_pid: [5.5, 0.0, 3.3, 850.0, 500.0]
-        drive_speed_pid: [6.0, 0.3, 0.0, 2000.0, 250.0]
+        steer_angle_pid: [0.3, 0.0, 0.0, 400.0, 50.0]
+        steer_speed_pid: [2.6, 0.0, 0.0, 850.0, 80.0]
+        drive_speed_pid: [0.7, 0.0, 0.0, 2000.0, 250.0]
 
       gimbal:
         pitch_center_ecd: 4600

@@ -28,7 +28,8 @@ namespace universal_controller
         motor_type_ = config_.motor_type;
 
         // 初始化运动学
-        uint16_t ecd_range = (motor_type_ == MotorType::DJI) ? 8192 : 65536;
+        // 对齐旧 sentry_controller：LK 舵向编码器按 32768 周期处理
+        uint32_t ecd_range = (motor_type_ == MotorType::DJI) ? 8192u : 32768u;
         kinematics_ = std::make_unique<SwerveKinematics>(
             config_.wheel_track, config_.wheel_base, ecd_range);
 
@@ -234,10 +235,10 @@ namespace universal_controller
         {
             int32_t err = static_cast<int32_t>(target_steer_ecds_[i]) - current_steer_ecds_[i];
             // 处理编码器跳变
-            if (err > 32768)
-                err -= 65536;
-            if (err < -32768)
-                err += 65536;
+            if (err > 16384)
+                err -= 32768;
+            if (err < -16384)
+                err += 32768;
 
             double target_rpm = steer_angle_pids_[i].update(static_cast<double>(err));
             double current_out = steer_speed_pids_[i].update(
