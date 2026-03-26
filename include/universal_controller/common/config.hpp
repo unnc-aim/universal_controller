@@ -187,6 +187,7 @@ namespace universal_controller
 
         // 编码器零位
         std::array<int, 4> ecd_zeros{0, 0, 0, 0};
+        int yaw_center_ecd{39200};
 
         // 电机类型
         MotorType motor_type{MotorType::DJI};
@@ -216,6 +217,7 @@ namespace universal_controller
             wheel_track = cfg.get_prefixed_double("controllers.chassis", "wheel_track", wheel_track);
             wheel_base = cfg.get_prefixed_double("controllers.chassis", "wheel_base", wheel_base);
             ecd_zeros = cfg.get_array4<int>("controllers.chassis.ecd_zeros", ecd_zeros);
+            yaw_center_ecd = cfg.get_prefixed_int("controllers.chassis", "yaw_center_ecd", yaw_center_ecd);
 
             motor_type = cfg.get_motor_type("motor_type.chassis", motor_type);
 

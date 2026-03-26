@@ -26,6 +26,7 @@ namespace universal_controller
 
         // 设置电机类型
         motor_type_ = config_.motor_type;
+        yaw_center_ecd_ = config_.yaw_center_ecd;
 
         // 初始化运动学
         // 对齐旧 sentry_controller：LK 舵向编码器按 32768 周期处理
@@ -96,6 +97,7 @@ namespace universal_controller
         set_initialized(true);
         RCLCPP_INFO(node->get_logger(), "ChassisController initialized (motor type: %s)",
                     motor_type_ == MotorType::DJI ? "DJI" : "LK");
+        RCLCPP_INFO(node->get_logger(), "Chassis yaw_center_ecd=%d", yaw_center_ecd_);
     }
 
     void ChassisController::set_command(const ChassisCommand &cmd)

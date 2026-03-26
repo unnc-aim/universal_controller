@@ -28,6 +28,7 @@
         wheel_track: 0.2746
         wheel_base: 0.2746
         ecd_zeros: [5989, 21248, 23534, 1128]
+        yaw_center_ecd: 39200
         topic_drive_write: '/ecat/sn2228292/app1/write'
         topic_drive_read: '/ecat/sn2228292/app1/read'
         topic_steer_write: '/ecat/sn2228292/app2/write'
