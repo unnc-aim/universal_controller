@@ -141,7 +141,7 @@ namespace universal_controller
             }
 
             // 使用工具解析
-            const auto left = def["left_trigger"];
+            const auto left = def["left_switch"];
             if (left)
             {
                 parse_dock_points(left["dock_points"], trigger_definition_.left_dock_points);
@@ -151,7 +151,7 @@ namespace universal_controller
                 parse_transitions(left["transitions"], trigger_definition_.left_transitions, trans_names);
             }
 
-            const auto right = def["right_trigger"];
+            const auto right = def["right_switch"];
             if (right)
             {
                 parse_dock_points(right["dock_points"], trigger_definition_.right_dock_points);
@@ -208,7 +208,7 @@ namespace universal_controller
         unified_output_.connected = connected_;
         unified_output_.control_source = "NDJ";
         unified_output_.header.stamp = this->now();
-        feeder_state_ = false;  // 每帧重置单发状态
+        feeder_state_ = false; // 每帧重置单发状态
 
         if (trigger_definition_.loaded)
         {

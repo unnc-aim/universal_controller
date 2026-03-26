@@ -28,7 +28,7 @@ ndj_trigger_def:
   # 上=1: 自瞄开
   # 中=3: 自瞄关
   # 下=2: 急停
-  left_trigger:
+  left_switch:
     dock_points:
       up:
         actions:
@@ -53,7 +53,7 @@ ndj_trigger_def:
   # 中: 导航+行为树，开摩擦轮
   # 下: 全关
   # transitions: 下->中时，供弹切换（连发/单发）
-  right_trigger:
+  right_switch:
     dock_points:
       up:
         actions:

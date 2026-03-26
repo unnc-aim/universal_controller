@@ -167,7 +167,7 @@ namespace universal_controller
             parse_dial_action(def["thumb_wheel_down"], trigger_definition_.thumb_wheel_down);
 
             // 解析扳机
-            parse_trigger_button_definition(def["trigger"], trigger_definition_.trigger);
+            parse_button_definition(def["trigger"], trigger_definition_.trigger);
 
             trigger_definition_.loaded = true;
             RCLCPP_INFO(this->get_logger(), "Loaded VTM trigger definition: %s", file_path.c_str());
@@ -213,7 +213,6 @@ namespace universal_controller
         unified_output_.connected = connected_;
         unified_output_.control_source = "VTM";
         unified_output_.header.stamp = this->now();
-        fire_single_pulse_ = false;
         spin_speed_delta_ = 0.0;
 
         // 执行 YAML 定义的 trigger 动作
@@ -338,11 +337,17 @@ namespace universal_controller
 
         // ========== 按钮处理 ==========
         handle_button_transition(rc.pause_button == 1, last_pause_button_,
-                                 trigger_definition_.pause_button);
+                     pause_button_press_start_time_,
+                     pause_button_long_press_active_,
+                     trigger_definition_.pause_button);
         handle_button_transition(rc.left_custom_button == 1, last_left_custom_button_,
-                                 trigger_definition_.left_custom_button);
+                     left_custom_button_press_start_time_,
+                     left_custom_button_long_press_active_,
+                     trigger_definition_.left_custom_button);
         handle_button_transition(rc.right_custom_button == 1, last_right_custom_button_,
-                                 trigger_definition_.right_custom_button);
+                     right_custom_button_press_start_time_,
+                     right_custom_button_long_press_active_,
+                     trigger_definition_.right_custom_button);
 
         // ========== 扳机处理 ==========
         handle_trigger_button(rc);

@@ -36,7 +36,6 @@ namespace universal_controller
         {
             return;
         }
-        out.switch_toggle = yaml_bool(spin_control_node, "switch_toggle");
         out.accelerate = yaml_bool(spin_control_node, "accelerate");
         out.decelerate = yaml_bool(spin_control_node, "decelerate");
     }
@@ -186,7 +185,7 @@ namespace universal_controller
         apply_tri_state_action(actions.nav_topic, states.nav_topic_state);
         apply_tri_state_action(actions.behavior_tree_topic, states.behavior_tree_state);
         apply_tri_state_action(actions.friction_wheel, states.friction_state);
-        apply_tri_state_action(actions.spin_mode, states.spin_mode_enabled);
+        apply_tri_state_action(actions.spin_mode, states.spin_mode);
         apply_tri_state_action(actions.feeder, states.feeder_state);
         apply_tri_state_action(actions.feeder_burst, states.burst_mode);
         apply_spin_control_action(actions.spin_control, states.spin_speed_delta);
