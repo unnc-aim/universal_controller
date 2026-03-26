@@ -26,7 +26,7 @@ float64 spin_speed        # 小陀螺速度
 float64 pitch_delta       # Pitch 增量 (度) - 遥控模式用
 float64 yaw_delta         # Yaw 增量 (弧度) - 遥控模式用
 
-# ===== 发射指令 =====
+# ===== 火控指令 =====
 bool fire_trigger         # 发射触发
 bool burst_mode           # 连发模式
 bool friction_on          # 摩擦轮开关

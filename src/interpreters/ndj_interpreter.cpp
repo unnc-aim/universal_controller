@@ -4,64 +4,10 @@
  */
 
 #include "universal_controller/interpreters/ndj_interpreter.hpp"
+#include "universal_controller/tools/rc_yaml_parser.hpp"
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <yaml-cpp/yaml.h>
-
-namespace
-{
-    bool yaml_bool(const YAML::Node &node, const char *key)
-    {
-        return (node && node[key]) ? node[key].as<bool>() : false;
-    }
-
-    void parse_tristate(const YAML::Node &actions_node,
-                        const char *key,
-                        universal_controller::NDJInterpreter::TriStateAction &out)
-    {
-        const auto n = actions_node[key];
-        if (!n)
-        {
-            return;
-        }
-        out.on = yaml_bool(n, "on");
-        out.off = yaml_bool(n, "off");
-        out.toggle = yaml_bool(n, "toggle");
-    }
-
-    void parse_actions(const YAML::Node &actions_node,
-                       universal_controller::NDJInterpreter::ActionSet &out)
-    {
-        if (!actions_node)
-        {
-            return;
-        }
-
-        parse_tristate(actions_node, "autoaim", out.autoaim);
-        parse_tristate(actions_node, "emergency_stop", out.emergency_stop);
-        parse_tristate(actions_node, "nav_topic", out.nav_topic);
-        parse_tristate(actions_node, "behavior_tree_topic", out.behavior_tree_topic);
-        parse_tristate(actions_node, "friction_wheel", out.friction_wheel);
-        parse_tristate(actions_node, "spin_mode", out.spin_mode);
-
-        const auto feeder = actions_node["feeder"];
-        if (feeder)
-        {
-            out.feeder.single_shot_once = yaml_bool(feeder, "single_once");
-            out.feeder.continuous_start = yaml_bool(feeder, "burst_on");
-            out.feeder.continuous_stop = yaml_bool(feeder, "burst_off");
-            out.feeder.continuous_toggle = yaml_bool(feeder, "burst_toggle");
-        }
-
-        const auto spin_control = actions_node["spin_control"];
-        if (spin_control)
-        {
-            out.spin_control.switch_toggle = yaml_bool(spin_control, "switch_toggle");
-            out.spin_control.accelerate = yaml_bool(spin_control, "accelerate");
-            out.spin_control.decelerate = yaml_bool(spin_control, "decelerate");
-        }
-    }
-} // namespace
 
 namespace universal_controller
 {
@@ -194,77 +140,29 @@ namespace universal_controller
                 return;
             }
 
-            auto parse_dock_points = [](const YAML::Node &dock_points,
-                                        std::array<ActionSet, 3> &out)
-            {
-                const std::array<std::string, 3> names = {"up", "mid", "down"};
-
-                for (size_t i = 0; i < names.size(); ++i)
-                {
-                    const YAML::Node dock_node = dock_points[names[i]];
-                    if (!dock_node)
-                    {
-                        continue;
-                    }
-                    parse_actions(dock_node["actions"], out[i]);
-                }
-            };
-
-            auto parse_transitions = [](const YAML::Node &transitions,
-                                        std::array<ActionSet, 4> &out)
-            {
-                // NDJ 原始拨杆值: 上/中/下 = 1/3/2
-                // 仅支持四种合法相邻瞬间: 13, 31, 23, 32
-                const std::array<std::string, 4> names = {
-                    "up_to_mid",
-                    "mid_to_up",
-                    "down_to_mid",
-                    "mid_to_down"};
-
-                for (size_t i = 0; i < names.size(); ++i)
-                {
-                    const YAML::Node trans_node = transitions[names[i]];
-                    if (!trans_node)
-                    {
-                        continue;
-                    }
-                    parse_actions(trans_node["actions"], out[i]);
-                }
-            };
-
+            // 使用工具解析
             const auto left = def["left_trigger"];
             if (left)
             {
                 parse_dock_points(left["dock_points"], trigger_definition_.left_dock_points);
-                parse_transitions(left["transitions"], trigger_definition_.left_transitions);
+
+                const std::array<std::string, 4> trans_names = {
+                    "up_to_mid", "mid_to_up", "down_to_mid", "mid_to_down"};
+                parse_transitions(left["transitions"], trigger_definition_.left_transitions, trans_names);
             }
 
             const auto right = def["right_trigger"];
             if (right)
             {
                 parse_dock_points(right["dock_points"], trigger_definition_.right_dock_points);
-                parse_transitions(right["transitions"], trigger_definition_.right_transitions);
+
+                const std::array<std::string, 4> trans_names = {
+                    "up_to_mid", "mid_to_up", "down_to_mid", "mid_to_down"};
+                parse_transitions(right["transitions"], trigger_definition_.right_transitions, trans_names);
             }
 
-            const auto dial_up = def["dial_up"];
-            if (dial_up)
-            {
-                if (dial_up["threshold"])
-                {
-                    trigger_definition_.dial_up.threshold = dial_up["threshold"].as<double>();
-                }
-                parse_actions(dial_up["actions"], trigger_definition_.dial_up.actions);
-            }
-
-            const auto dial_down = def["dial_down"];
-            if (dial_down)
-            {
-                if (dial_down["threshold"])
-                {
-                    trigger_definition_.dial_down.threshold = dial_down["threshold"].as<double>();
-                }
-                parse_actions(dial_down["actions"], trigger_definition_.dial_down.actions);
-            }
+            parse_dial_action(def["dial_up"], trigger_definition_.dial_up);
+            parse_dial_action(def["dial_down"], trigger_definition_.dial_down);
 
             trigger_definition_.loaded = true;
             RCLCPP_INFO(this->get_logger(), "Loaded NDJ trigger definition: %s", file_path.c_str());
@@ -310,7 +208,7 @@ namespace universal_controller
         unified_output_.connected = connected_;
         unified_output_.control_source = "NDJ";
         unified_output_.header.stamp = this->now();
-        fire_single_pulse_ = false;
+        feeder_state_ = false;  // 每帧重置单发状态
 
         if (trigger_definition_.loaded)
         {
@@ -334,57 +232,10 @@ namespace universal_controller
         }
         unified_output_.emergency_stop = false;
 
-        // ========== 2. 配置触发动作 ==========
-        if (!trigger_definition_.loaded)
-        {
-            // 保留旧行为作为回退路径
-            if (rc.right_switch == 1 || rc.right_switch == 3)
-            {
-                if (rc.right_switch != last_pause_button_ || !nav_mode_enabled_)
-                {
-                    unified_output_.vx = 0.0;
-                    unified_output_.vy = 0.0;
-                    unified_output_.wz = 0.0;
-                }
-                nav_mode_enabled_ = true;
-                unified_output_.navigation_enabled = true;
-                last_pause_button_ = rc.right_switch;
-            }
-            else
-            {
-                nav_mode_enabled_ = false;
-                unified_output_.navigation_enabled = false;
-                last_pause_button_ = rc.right_switch;
-            }
-
-            if (rc.left_switch == 1 && last_gear_switch_ != 1)
-            {
-                spin_mode_enabled_ = !spin_mode_enabled_;
-                if (spin_mode_enabled_)
-                {
-                    input_processor_.reset_spin_speed();
-                }
-                RCLCPP_INFO(this->get_logger(), "Spin Mode: %s", spin_mode_enabled_ ? "ON" : "OFF");
-            }
-            last_gear_switch_ = rc.left_switch;
-
-            bool v_pressed = (rc.v == 1);
-            if (v_pressed && !last_v_pressed_)
-            {
-                spin_mode_enabled_ = !spin_mode_enabled_;
-                if (spin_mode_enabled_)
-                {
-                    input_processor_.reset_spin_speed();
-                }
-                RCLCPP_INFO(this->get_logger(), "Spin Mode (V): %s", spin_mode_enabled_ ? "ON" : "OFF");
-            }
-            last_v_pressed_ = v_pressed;
-        }
-
-        // ========== 3. 速度分档 ==========
+        // ========== 2. 速度分档 ==========
         input_processor_.update_keyboard_speed(rc.shift == 1, rc.ctrl == 1);
 
-        // ========== 4. 小陀螺速度调节 ==========
+        // ========== 3. 小陀螺速度调节 ==========
         if (spin_mode_enabled_)
         {
             input_processor_.update_spin_speed(rc.dial, rc.shift == 1, rc.ctrl == 1);
@@ -394,7 +245,7 @@ namespace universal_controller
                                                        : unified_output_.navigation_enabled;
         unified_output_.navigation_enabled = nav_mode_enabled_;
 
-        // ========== 5. 底盘速度计算 ==========
+        // ========== 4. 底盘速度计算 ==========
         if (nav_mode_enabled_)
         {
             unified_output_.vx = 0.0;
@@ -415,12 +266,7 @@ namespace universal_controller
         unified_output_.spin_speed = input_processor_.get_spin_speed();
         unified_output_.chassis_speed_scale = input_processor_.get_speed_scale();
 
-        // ========== 6. 云台控制（对齐 sentry_controller 逻辑） ==========
-        // legacy mapping:
-        // left_right_offset = left_x * 100 + clamp(mouse_x * 0.75, -100, 100)
-        // top_down_offset   = left_y * 100 + clamp(mouse_y,        -100, 100)
-        // pitch_delta = top_down_offset * 0.00005 * (180 / pi)
-        // yaw_delta   = -left_right_offset * 10 * pi * 0.001 * 0.0025
+        // ========== 5. 云台控制（对齐 sentry_controller 逻辑） ==========
         const double mouse_x = static_cast<double>(rc.mouse_x) * input_config_.mouse_sensitivity;
         const double mouse_y = static_cast<double>(rc.mouse_y) * input_config_.mouse_sensitivity;
 
@@ -441,15 +287,15 @@ namespace universal_controller
         unified_output_.pitch_delta = top_down_offset * input_config_.pitch_gain_coeff;
         unified_output_.yaw_delta = -left_right_offset * input_config_.yaw_gain_coeff;
 
-        // ========== 7. 发射与模式控制 ==========
+        // ========== 6. 发射与模式控制 ==========
         if (trigger_definition_.loaded)
         {
             const bool mouse_autoaim = (rc.mouse_right_clicked == 1);
             const bool mouse_fire = (rc.mouse_left_clicked == 1);
 
             unified_output_.autoaim_enabled = autoaim_state_ || mouse_autoaim;
-            unified_output_.burst_mode = feeder_continuous_state_;
-            unified_output_.fire_trigger = fire_single_pulse_ || feeder_continuous_state_ || mouse_fire;
+            unified_output_.burst_mode = burst_mode_;
+            unified_output_.fire_trigger = feeder_state_ || burst_mode_ || mouse_fire;
             unified_output_.friction_on = friction_state_;
             unified_output_.friction_speed = friction_state_ ? 6500.0 : 0.0;
         }
@@ -515,67 +361,22 @@ namespace universal_controller
 
     void NDJInterpreter::execute_action_set(const ActionSet &actions)
     {
+        // 使用抽象工具函数
         apply_tri_state_action(actions.emergency_stop, emergency_state_);
         apply_tri_state_action(actions.autoaim, autoaim_state_);
         apply_tri_state_action(actions.nav_topic, nav_topic_state_);
         apply_tri_state_action(actions.behavior_tree_topic, behavior_tree_state_);
         apply_tri_state_action(actions.friction_wheel, friction_state_);
         apply_tri_state_action(actions.spin_mode, spin_mode_enabled_);
-        apply_feeder_action(actions.feeder);
-        apply_spin_control_action(actions.spin_control);
-    }
+        apply_tri_state_action(actions.feeder, feeder_state_);
+        apply_tri_state_action(actions.feeder_burst, burst_mode_);
 
-    void NDJInterpreter::apply_tri_state_action(const TriStateAction &action, bool &state)
-    {
-        if (action.on)
-        {
-            state = true;
-        }
-        if (action.off)
-        {
-            state = false;
-        }
-        if (action.toggle)
-        {
-            state = !state;
-        }
-    }
-
-    void NDJInterpreter::apply_feeder_action(const FeederAction &action)
-    {
-        if (action.single_shot_once)
-        {
-            fire_single_pulse_ = true;
-        }
-        if (action.continuous_start)
-        {
-            feeder_continuous_state_ = true;
-        }
-        if (action.continuous_stop)
-        {
-            feeder_continuous_state_ = false;
-        }
-        if (action.continuous_toggle)
-        {
-            feeder_continuous_state_ = !feeder_continuous_state_;
-        }
-    }
-
-    void NDJInterpreter::apply_spin_control_action(const SpinControlAction &action)
-    {
-        if (action.switch_toggle)
-        {
-            spin_mode_enabled_ = !spin_mode_enabled_;
-            if (spin_mode_enabled_)
-            {
-                input_processor_.reset_spin_speed();
-            }
-        }
-        if (action.accelerate)
+        // 小陀螺速度控制
+        if (actions.spin_control.accelerate)
         {
             input_processor_.update_spin_speed(-1.0, false, false);
         }
-        if (action.decelerate)
+        if (actions.spin_control.decelerate)
         {
             input_processor_.update_spin_speed(1.0, false, false);
         }

@@ -1,0 +1,114 @@
+# VTM Trigger Definition (Sentry)
+# VT13 遥控器配置 - 哨兵机器人
+#
+# 规则:
+# - 所有动作默认 false
+# - 只有填写并设为 true 的动作才会生效
+# - dock_points 只能使用 on/off（强制状态）
+# - buttons/transitions 可使用 on/off/toggle
+#
+# 按钮事件模型 (可叠加，一旦达到条件始终触发对应actions):
+# - on_press: 按下瞬间触发
+# - 如果保持时间 < long_press_threshold_s: 短按
+#   - on_short_press_released: 短按释放时触发
+# - 如果保持时间 >= long_press_threshold_s: 长按
+#   - on_long_press_reached: 长按阈值到达时触发
+#   - on_long_press_released: 长按释放时触发
+# - on_release: 任何释放时触发
+
+vtm_trigger_def:
+  version: 1
+
+  # 供解析器参考: 可选动作全集（dock_points 仅 on/off，buttons/transitions 可 toggle）
+  # action_schema:
+  #   emergency_stop: [on, off, toggle] # 急停
+  #   autoaim: [on, off, toggle] # 自瞄
+  #   nav_topic: [on, off, toggle] # 导航
+  #   behavior_tree_topic: [on, off, toggle] # 行为树
+  #   friction_wheel: [on, off, toggle] # 摩擦轮
+  #   feeder: [on, off, toggle] # 拨弹盘
+  #   feeder_burst: [on, off, toggle] # 连发模式
+  #   spin_mode: [on, off, toggle] # 小陀螺开关
+  #   spin_control: [accelerate, decelerate] # 小陀螺速度控制
+
+  # ========== 三档拨杆 ==========
+  # 左(1)=急停，中(2)=正常，右(3)=导航+行为树
+  gear_switching:
+    dock_points:
+      left:   # [0] 急停
+        actions:
+          emergency_stop: {on: true}
+          nav_topic: {off: true}
+          behavior_tree_topic: {off: true}
+
+      mid:    # [1] 正常操作
+        actions:
+          emergency_stop: {off: true}
+          nav_topic: {off: true}
+          behavior_tree_topic: {off: true}
+
+      right:  # [2] 导航+行为树
+        actions:
+          emergency_stop: {off: true}
+          nav_topic: {on: true}
+          behavior_tree_topic: {on: true}
+
+    transitions:
+      left_to_mid:     # [0] 左→中
+        actions: {}
+      mid_to_left:     # [1] 中→左
+        actions: {}
+      mid_to_right:    # [2] 中→右
+        actions: {}
+      right_to_mid:    # [3] 右→中
+        actions: {}
+
+  # ========== 自瞄切换按钮 ==========
+  pause_button:
+    on_press:
+      actions:
+        autoaim: {toggle: true}
+
+  # ========== 小陀螺开关按钮 ==========
+  left_custom_button:
+    on_press:
+      actions:
+        spin_mode: {toggle: true}
+
+  # ========== 摩擦轮开关按钮 ==========
+  right_custom_button:
+    on_press:
+      actions:
+        friction_wheel: {toggle: true}
+
+  # ========== 小陀螺速度滚轮 ==========
+  thumb_wheel_up:    # 向右拨（加速）
+    threshold: 0.5
+    actions:
+      spin_control:
+        accelerate: true
+
+  thumb_wheel_down:  # 向左拨（减速）
+    threshold: 0.5
+    actions:
+      spin_control:
+        decelerate: true
+
+  # ========== 发射扳机 ==========
+  # 短按: 单发，长按: 连发
+  trigger:
+    long_press_threshold_s: 0.2
+    # on_press:
+    #   actions: {}
+    on_short_press_released:
+      actions:
+        feeder: {on: true}
+        feeder_burst: {off: true}
+    on_long_press_reached:
+      actions:
+        feeder: {on: true}
+        feeder_burst: {on: true}
+    on_release:
+      actions:
+        feeder: {off: true}
+        feeder_burst: {off: true}

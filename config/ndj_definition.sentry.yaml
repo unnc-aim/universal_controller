@@ -1,28 +1,33 @@
 # NDJ Trigger Definition (Sentry)
 # 设计目标:
 # - 2 x 3: 左右两个 trigger 的 3 个停靠点
-# - 2 x 4: 左右两个 trigger 的 4 个停靠点切换瞬间
 # - 1: 遥控器滚轮配置点
 #
 # 规则:
 # - 所有动作默认 false
 # - 只有填写并设为 true 的动作才会生效
+# - dock_points 只能使用 on/off（强制状态）
+# - transitions 可使用 on/off/toggle
 
 ndj_trigger_def:
   version: 1
 
-  # 供解析器参考: 可选动作全集（说明用途，实际执行以各配置点 true 为准）
+  # 供解析器参考: 可选动作全集（dock_points 仅 on/off，buttons/transitions 可 toggle）
   # action_schema:
-  #   emergency_stop: [on, off, toggle]
-  #   autoaim: [on, off, toggle]
-  #   nav_topic: [on, off, toggle]
-  #   behavior_tree_topic: [on, off, toggle]
-  #   friction_wheel: [on, off, toggle]
-  #   feeder: [single_once, burst_on, burst_off, burst_toggle]
-  #   spin_mode: [on, off, toggle]
-  #   spin_control: [switch_toggle, accelerate, decelerate]
+  #   emergency_stop: [on, off, toggle] # 急停
+  #   autoaim: [on, off, toggle] # 自瞄
+  #   nav_topic: [on, off, toggle] # 导航
+  #   behavior_tree_topic: [on, off, toggle] # 行为树
+  #   friction_wheel: [on, off, toggle] # 摩擦轮
+  #   feeder: [on, off, toggle] # 拨弹盘
+  #   feeder_burst: [on, off, toggle] # 连发模式
+  #   spin_mode: [on, off, toggle] # 小陀螺开关
+  #   spin_control: [accelerate, decelerate] # 小陀螺速度控制
 
-  # 左 trigger: 3 个停靠点 + 4 个切换瞬间
+  # 左 trigger: 3 个停靠点
+  # 上=1: 自瞄开
+  # 中=3: 自瞄关
+  # 下=2: 急停
   left_trigger:
     dock_points:
       up:
@@ -43,6 +48,11 @@ ndj_trigger_def:
         actions:
           spin_mode: {toggle: true}
 
+  # 右 trigger: 3 个停靠点
+  # 上: 导航+行为树，开供弹
+  # 中: 导航+行为树，开摩擦轮
+  # 下: 全关
+  # transitions: 下->中时，供弹切换（连发/单发）
   right_trigger:
     dock_points:
       up:
@@ -50,54 +60,26 @@ ndj_trigger_def:
           nav_topic: {on: true}
           behavior_tree_topic: {on: true}
           friction_wheel: {on: true}
-          feeder:
-            continuous_start: true
+          feeder: {on: true}
       mid:
         actions:
           nav_topic: {on: true}
           behavior_tree_topic: {on: true}
           friction_wheel: {on: true}
-          feeder:
-            continuous_start: true
+          feeder: {off: true}
       down:
         actions:
           nav_topic: {off: true}
           behavior_tree_topic: {off: true}
           friction_wheel: {off: true}
-          feeder:
-            continuous_stop: true
-        
+          feeder: {off: true}
 
     transitions:
-      up_to_mid:
-        actions:
-          nav_topic: {off: true}
-          behavior_tree_topic: {off: true}
-          friction_wheel: {off: true}
-          feeder:
-            continuous_stop: true
-      mid_to_up:
-        actions:
-          nav_topic: {on: true}
-          behavior_tree_topic: {on: true}
-          friction_wheel: {on: true}
-          feeder:
-            continuous_start: true
       down_to_mid:
         actions:
-          nav_topic: {on: true}
-          behavior_tree_topic: {on: true}
-          friction_wheel: {on: true}
-          feeder:
-            continuous_start: true
-      mid_to_down:
-        actions:
-          nav_topic: {off: true}
-          behavior_tree_topic: {off: true}
-          friction_wheel: {off: true}
-          feeder:
-            continuous_stop: true
+          feeder_burst: {toggle: true}
 
+  # 遥控器滚轮: 加速/减速小陀螺
   dial_up:
     threshold: 0.5
     actions:

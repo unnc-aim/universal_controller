@@ -60,6 +60,7 @@ set(CONTROLLER_SOURCES
 
 set(TOOL_SOURCES
   src/tools/swerve_kinematics.cpp
+  src/tools/rc_yaml_parser.cpp
 )
 
 # ========== Main Hub Node ==========

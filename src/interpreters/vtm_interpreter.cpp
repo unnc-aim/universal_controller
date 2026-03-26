@@ -4,6 +4,10 @@
  */
 
 #include "universal_controller/interpreters/vtm_interpreter.hpp"
+#include "universal_controller/tools/rc_yaml_parser.hpp"
+
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <yaml-cpp/yaml.h>
 
 namespace universal_controller
 {
@@ -15,8 +19,8 @@ namespace universal_controller
         declare_parameters();
         load_parameters();
 
-        // 订阅遥控器 (ReadDJIRC)
-        sub_rc_ = this->create_subscription<custom_msgs::msg::ReadDJIRC>(
+        // 订阅 VT13 遥控器 (ReadVT13RemoteControl)
+        sub_rc_ = this->create_subscription<custom_msgs::msg::ReadVT13RemoteControl>(
             topic_rc_read_, qos_best_effort_,
             std::bind(&VTMInterpreter::cb_rc, this, std::placeholders::_1));
 
@@ -33,14 +37,18 @@ namespace universal_controller
         unified_output_.control_source = "VTM";
         unified_output_.connected = false;
 
-        RCLCPP_INFO(this->get_logger(), "VTM Interpreter started (ReadDJIRC)");
+        RCLCPP_INFO(this->get_logger(), "VTM Interpreter started (ReadVT13RemoteControl)");
     }
 
     void VTMInterpreter::declare_parameters()
     {
         // 话题
-        this->declare_parameter("rc_interpreter.topic_vtm_rc", "/ecat/sn4653115/app5/read");
+        this->declare_parameter("rc_interpreter.topic_vtm_rc", "/ecat/vt13/app1/read");
         this->declare_parameter("rc_interpreter.topic_vtm_output", "/universal_controller/input/vtm");
+        this->declare_parameter("rc_interpreter.vtm_definition_file", "");
+
+        // 连接超时
+        this->declare_parameter("rc_interpreter.connection_timeout_s", 0.5);
 
         // 输入处理器参数
         this->declare_parameter("rc_interpreter.joystick_max_output", 8000.0);
@@ -71,6 +79,8 @@ namespace universal_controller
     {
         topic_rc_read_ = this->get_parameter("rc_interpreter.topic_vtm_rc").as_string();
         topic_unified_output_ = this->get_parameter("rc_interpreter.topic_vtm_output").as_string();
+        vtm_definition_file_ = this->get_parameter("rc_interpreter.vtm_definition_file").as_string();
+        connection_timeout_s_ = this->get_parameter("rc_interpreter.connection_timeout_s").as_double();
 
         // 加载输入处理器配置
         input_config_.joystick_max_output = this->get_parameter("rc_interpreter.joystick_max_output").as_double();
@@ -98,18 +108,98 @@ namespace universal_controller
 
         // 更新输入处理器
         input_processor_.update_config(input_config_);
+
+        // 加载 YAML 配置文件
+        if (vtm_definition_file_.empty())
+        {
+            try
+            {
+                vtm_definition_file_ = ament_index_cpp::get_package_share_directory("universal_controller") +
+                                       "/config/vtm_definition.sentry.yaml";
+            }
+            catch (const std::exception &e)
+            {
+                RCLCPP_WARN(this->get_logger(), "Failed to resolve share config path: %s", e.what());
+            }
+        }
+
+        if (!vtm_definition_file_.empty())
+        {
+            load_trigger_definition(vtm_definition_file_);
+        }
     }
 
-    void VTMInterpreter::cb_rc(const custom_msgs::msg::ReadDJIRC::SharedPtr msg)
+    void VTMInterpreter::load_trigger_definition(const std::string &file_path)
+    {
+        try
+        {
+            const YAML::Node root = YAML::LoadFile(file_path);
+            const YAML::Node def = root["vtm_trigger_def"];
+            if (!def)
+            {
+                RCLCPP_WARN(this->get_logger(), "vtm_trigger_def not found in %s", file_path.c_str());
+                return;
+            }
+
+            // 解析 gear_switching
+            const auto gear = def["gear_switching"];
+            if (gear)
+            {
+                parse_dock_points(gear["dock_points"], trigger_definition_.gear_dock_points);
+
+                // 解析四档切换：left_to_mid, mid_to_left, mid_to_right, right_to_mid
+                const auto trans = gear["transitions"];
+                if (trans)
+                {
+                    const std::array<std::string, 4> names = {
+                        "left_to_mid", "mid_to_left", "mid_to_right", "right_to_mid"};
+                    parse_transitions(trans, trigger_definition_.gear_transitions, names);
+                }
+            }
+
+            // 解析按钮定义
+            parse_button_definition(def["pause_button"], trigger_definition_.pause_button);
+            parse_button_definition(def["left_custom_button"], trigger_definition_.left_custom_button);
+            parse_button_definition(def["right_custom_button"], trigger_definition_.right_custom_button);
+
+            // 解析滚轮
+            parse_dial_action(def["thumb_wheel_up"], trigger_definition_.thumb_wheel_up);
+            parse_dial_action(def["thumb_wheel_down"], trigger_definition_.thumb_wheel_down);
+
+            // 解析扳机
+            parse_trigger_button_definition(def["trigger"], trigger_definition_.trigger);
+
+            trigger_definition_.loaded = true;
+            RCLCPP_INFO(this->get_logger(), "Loaded VTM trigger definition: %s", file_path.c_str());
+        }
+        catch (const std::exception &e)
+        {
+            trigger_definition_.loaded = false;
+            RCLCPP_WARN(this->get_logger(), "Failed to load VTM definition %s: %s", file_path.c_str(), e.what());
+        }
+    }
+
+    void VTMInterpreter::cb_rc(const custom_msgs::msg::ReadVT13RemoteControl::SharedPtr msg)
     {
         raw_rc_data_ = msg;
-        connected_ = (msg->online == 1);
+        last_rc_time_ = this->now();
+        connected_ = true; // VT13 假设有数据就是连接状态
         process_input();
     }
 
     void VTMInterpreter::process_input()
     {
-        if (!raw_rc_data_)
+        // 检查连接超时
+        if (connected_)
+        {
+            auto now = this->now();
+            if ((now - last_rc_time_).seconds() > connection_timeout_s_)
+            {
+                connected_ = false;
+            }
+        }
+
+        if (!raw_rc_data_ || !connected_)
         {
             unified_output_.emergency_stop = true;
             unified_output_.connected = false;
@@ -123,16 +213,25 @@ namespace universal_controller
         unified_output_.connected = connected_;
         unified_output_.control_source = "VTM";
         unified_output_.header.stamp = this->now();
+        fire_single_pulse_ = false;
+        spin_speed_delta_ = 0.0;
 
-        // ========== 1. 离线或急停检测 ==========
-        if (!connected_ || rc.left_switch == 2)
+        // 执行 YAML 定义的 trigger 动作
+        if (trigger_definition_.loaded)
+        {
+            execute_trigger_actions(rc);
+        }
+
+        // ========== 1. 急停检测 ==========
+        bool emergency = emergency_state_;
+        if (emergency)
         {
             nav_mode_enabled_ = false;
             unified_output_.vx = 0.0;
             unified_output_.vy = 0.0;
             unified_output_.wz = 0.0;
             unified_output_.spin_mode = false;
-            unified_output_.emergency_stop = (rc.left_switch == 2);
+            unified_output_.emergency_stop = true;
             unified_output_.friction_on = false;
             unified_output_.fire_trigger = false;
             unified_output_.burst_mode = false;
@@ -140,93 +239,277 @@ namespace universal_controller
         }
         unified_output_.emergency_stop = false;
 
-        // ========== 2. 导航模式检测 ==========
-        if (rc.right_switch == 1 || rc.right_switch == 3)
-        {
-            if (rc.right_switch != last_right_switch_ || !nav_mode_enabled_)
-            {
-                unified_output_.vx = 0.0;
-                unified_output_.vy = 0.0;
-                unified_output_.wz = 0.0;
-            }
-            nav_mode_enabled_ = true;
-            unified_output_.navigation_enabled = true;
-            last_right_switch_ = rc.right_switch;
-            return;
-        }
-        nav_mode_enabled_ = false;
-        unified_output_.navigation_enabled = false;
-        last_right_switch_ = rc.right_switch;
+        // ========== 2. 导航模式 ==========
+        nav_mode_enabled_ = nav_topic_state_ || behavior_tree_state_;
+        unified_output_.navigation_enabled = nav_mode_enabled_;
 
-        // ========== 3. 小陀螺模式切换 ==========
-        // 拨杆切换
-        if (rc.left_switch == 1 && last_left_switch_ != 1)
-        {
-            spin_mode_enabled_ = !spin_mode_enabled_;
-            if (spin_mode_enabled_)
-            {
-                input_processor_.reset_spin_speed();
-            }
-            RCLCPP_INFO(this->get_logger(), "Spin Mode: %s", spin_mode_enabled_ ? "ON" : "OFF");
-        }
-        last_left_switch_ = rc.left_switch;
+        // ========== 3. 速度分档 ==========
+        input_processor_.update_keyboard_speed(rc.key_shift == 1, rc.key_ctrl == 1);
 
-        // V 键切换
-        bool v_pressed = (rc.v == 1);
-        if (v_pressed && !last_v_pressed_)
-        {
-            spin_mode_enabled_ = !spin_mode_enabled_;
-            if (spin_mode_enabled_)
-            {
-                input_processor_.reset_spin_speed();
-            }
-            RCLCPP_INFO(this->get_logger(), "Spin Mode (V): %s", spin_mode_enabled_ ? "ON" : "OFF");
-        }
-        last_v_pressed_ = v_pressed;
-
-        // ========== 4. 速度分档 ==========
-        input_processor_.update_keyboard_speed(rc.shift == 1, rc.ctrl == 1);
-
-        // ========== 5. 小陀螺速度调节 ==========
+        // ========== 4. 小陀螺速度调节（滚轮 + 键盘） ==========
         if (spin_mode_enabled_)
         {
-            input_processor_.update_spin_speed(rc.dial, rc.shift == 1, rc.ctrl == 1);
+            // 滚轮调节
+            input_processor_.update_spin_speed(rc.thumb_wheel, rc.key_shift == 1, rc.key_ctrl == 1);
+
+            // YAML 定义的额外增量
+            if (spin_speed_delta_ > 0.0)
+            {
+                for (int i = 0; i < static_cast<int>(spin_speed_delta_); ++i)
+                {
+                    input_processor_.update_spin_speed(-1.0, false, false); // 加速
+                }
+            }
+            else if (spin_speed_delta_ < 0.0)
+            {
+                for (int i = 0; i < static_cast<int>(-spin_speed_delta_); ++i)
+                {
+                    input_processor_.update_spin_speed(1.0, false, false); // 减速
+                }
+            }
         }
 
-        // ========== 6. 底盘速度计算 ==========
-        auto chassis_vel = input_processor_.compute_chassis_velocity(
-            rc.right_x, rc.right_y,
-            rc.w, rc.s, rc.a, rc.d);
+        // ========== 5. 底盘速度计算 ==========
+        if (nav_mode_enabled_)
+        {
+            unified_output_.vx = 0.0;
+            unified_output_.vy = 0.0;
+            unified_output_.wz = 0.0;
+        }
+        else
+        {
+            auto chassis_vel = input_processor_.compute_chassis_velocity(
+                rc.right_joystick_x, rc.right_joystick_y,
+                rc.key_w, rc.key_s, rc.key_a, rc.key_d);
+            unified_output_.vx = chassis_vel.vx;
+            unified_output_.vy = chassis_vel.vy;
+            unified_output_.wz = spin_mode_enabled_ ? input_processor_.get_spin_speed() : 0.0;
+        }
 
-        unified_output_.vx = chassis_vel.vx;
-        unified_output_.vy = chassis_vel.vy;
-        unified_output_.wz = spin_mode_enabled_ ? input_processor_.get_spin_speed() : 0.0;
         unified_output_.spin_mode = spin_mode_enabled_;
         unified_output_.spin_speed = input_processor_.get_spin_speed();
         unified_output_.chassis_speed_scale = input_processor_.get_speed_scale();
 
-        // ========== 7. 鼠标云台控制 ==========
+        // ========== 6. 鼠标云台控制 ==========
         auto gimbal_delta = input_processor_.compute_gimbal_delta(
-            static_cast<double>(rc.mouse_x),
-            static_cast<double>(rc.mouse_y));
+            static_cast<double>(rc.mouse_x_axis),
+            static_cast<double>(rc.mouse_y_axis));
 
         unified_output_.pitch_delta = gimbal_delta.pitch_delta;
         unified_output_.yaw_delta = gimbal_delta.yaw_delta;
 
-        // ========== 8. 发射控制 ==========
-        unified_output_.autoaim_enabled = rc.mouse_right_clicked == 1;
-        unified_output_.fire_trigger = rc.mouse_left_clicked == 1;
-        unified_output_.burst_mode = rc.mouse_left_clicked == 1;
-        unified_output_.friction_on = true;
-        unified_output_.friction_speed = 6500.0;
+        // ========== 7. 发射与模式控制 ==========
+        const bool mouse_autoaim = (rc.mouse_rb == 1);
+        const bool mouse_fire = (rc.mouse_lb == 1);
+
+        unified_output_.autoaim_enabled = autoaim_state_ || mouse_autoaim;
+        unified_output_.burst_mode = burst_mode_;
+        unified_output_.fire_trigger = feeder_state_ || burst_mode_ || mouse_fire;
+        unified_output_.friction_on = friction_state_;
+        unified_output_.friction_speed = friction_state_ ? 6500.0 : 0.0;
+    }
+
+    void VTMInterpreter::execute_trigger_actions(const custom_msgs::msg::ReadVT13RemoteControl &rc)
+    {
+        // ========== gear_switching 三档拨杆 ==========
+        // 值: 左=1, 中=2, 右=3
+        const int gear = static_cast<int>(rc.gear_switching);
+        if (gear >= 1 && gear <= 3)
+        {
+            execute_action_set(trigger_definition_.gear_dock_points[static_cast<size_t>(gear - 1)]);
+        }
+
+        // 检测切换瞬间，执行 transitions
+        // gear_transitions: [left_to_mid(0), mid_to_left(1), mid_to_right(2), right_to_mid(3)]
+        if (last_gear_switching_ != 0 && gear != 0 && last_gear_switching_ != gear)
+        {
+            int trans_idx = -1;
+            if (last_gear_switching_ == 1 && gear == 2)      trans_idx = 0;  // left_to_mid
+            else if (last_gear_switching_ == 2 && gear == 1) trans_idx = 1;  // mid_to_left
+            else if (last_gear_switching_ == 2 && gear == 3) trans_idx = 2;  // mid_to_right
+            else if (last_gear_switching_ == 3 && gear == 2) trans_idx = 3;  // right_to_mid
+
+            if (trans_idx >= 0)
+            {
+                execute_action_set(trigger_definition_.gear_transitions[static_cast<size_t>(trans_idx)]);
+            }
+        }
+        last_gear_switching_ = rc.gear_switching;
+
+        // ========== 按钮处理 ==========
+        handle_button_transition(rc.pause_button == 1, last_pause_button_,
+                                 trigger_definition_.pause_button);
+        handle_button_transition(rc.left_custom_button == 1, last_left_custom_button_,
+                                 trigger_definition_.left_custom_button);
+        handle_button_transition(rc.right_custom_button == 1, last_right_custom_button_,
+                                 trigger_definition_.right_custom_button);
+
+        // ========== 扳机处理 ==========
+        handle_trigger_button(rc);
+
+        // ========== 滚轮处理 ==========
+        const double thumb_now = static_cast<double>(rc.thumb_wheel);
+
+        // 向上（加速）
+        if (last_thumb_wheel_ <= trigger_definition_.thumb_wheel_up.threshold &&
+            thumb_now > trigger_definition_.thumb_wheel_up.threshold)
+        {
+            execute_action_set(trigger_definition_.thumb_wheel_up.actions);
+        }
+
+        // 向下（减速）
+        const double down_threshold = -std::abs(trigger_definition_.thumb_wheel_down.threshold);
+        if (last_thumb_wheel_ >= down_threshold && thumb_now < down_threshold)
+        {
+            execute_action_set(trigger_definition_.thumb_wheel_down.actions);
+        }
+
+        last_thumb_wheel_ = thumb_now;
+    }
+
+    void VTMInterpreter::handle_button_transition(bool current_pressed, bool &last_pressed,
+                                                   rclcpp::Time &press_start_time,
+                                                   bool &long_press_active,
+                                                   const ButtonDefinition &def)
+    {
+        if (!def.loaded)
+        {
+            return;
+        }
+
+        const auto now = this->now();
+
+        // 按下边沿
+        if (current_pressed && !last_pressed)
+        {
+            press_start_time = now;
+            long_press_active = false;
+            execute_action_set(def.on_press);
+        }
+
+        // 长按检测（持续按下状态）
+        if (current_pressed && !long_press_active)
+        {
+            const double hold_time = (now - press_start_time).seconds();
+            if (hold_time >= def.long_press_threshold_s)
+            {
+                long_press_active = true;
+                execute_action_set(def.on_long_press_reached);
+            }
+        }
+
+        // 释放边沿
+        if (!current_pressed && last_pressed)
+        {
+            // 先执行 on_release（任何释放都触发）
+            execute_action_set(def.on_release);
+
+            if (!long_press_active)
+            {
+                // 短按释放
+                execute_action_set(def.on_short_press_released);
+            }
+            else
+            {
+                // 长按释放
+                execute_action_set(def.on_long_press_released);
+            }
+        }
+
+        last_pressed = current_pressed;
+    }
+
+    void VTMInterpreter::handle_trigger_button(const custom_msgs::msg::ReadVT13RemoteControl &rc)
+    {
+        if (!trigger_definition_.trigger.loaded)
+        {
+            return;
+        }
+
+        const bool trigger_pressed = (rc.trigger == 1);
+        const auto now = this->now();
+
+        // 按下边沿
+        if (trigger_pressed && !trigger_currently_pressed_)
+        {
+            trigger_press_start_time_ = now;
+            trigger_long_press_active_ = false;
+            execute_action_set(trigger_definition_.trigger.on_press);
+        }
+
+        // 长按检测
+        if (trigger_pressed && !trigger_long_press_active_)
+        {
+            const double hold_time = (now - trigger_press_start_time_).seconds();
+            if (hold_time >= trigger_definition_.trigger.long_press_threshold_s)
+            {
+                trigger_long_press_active_ = true;
+                execute_action_set(trigger_definition_.trigger.on_long_press_reached);
+            }
+        }
+
+        // 释放边沿
+        if (!trigger_pressed && trigger_currently_pressed_)
+        {
+            // 先执行 on_release
+            execute_action_set(trigger_definition_.trigger.on_release);
+
+            if (!trigger_long_press_active_)
+            {
+                // 短按释放
+                execute_action_set(trigger_definition_.trigger.on_short_press_released);
+            }
+            else
+            {
+                // 长按释放
+                execute_action_set(trigger_definition_.trigger.on_long_press_released);
+            }
+        }
+
+        trigger_currently_pressed_ = trigger_pressed;
+    }
+
+    void VTMInterpreter::execute_action_set(const ActionSet &actions)
+    {
+        apply_tri_state_action(actions.emergency_stop, emergency_state_);
+        apply_tri_state_action(actions.autoaim, autoaim_state_);
+        apply_tri_state_action(actions.nav_topic, nav_topic_state_);
+        apply_tri_state_action(actions.behavior_tree_topic, behavior_tree_state_);
+        apply_tri_state_action(actions.friction_wheel, friction_state_);
+        apply_tri_state_action(actions.spin_mode, spin_mode_enabled_);
+        apply_tri_state_action(actions.feeder, feeder_state_);
+        apply_tri_state_action(actions.feeder_burst, burst_mode_);
+
+        // 小陀螺速度控制
+        if (actions.spin_control.accelerate)
+        {
+            spin_speed_delta_ += 1.0;
+        }
+        if (actions.spin_control.decelerate)
+        {
+            spin_speed_delta_ -= 1.0;
+        }
     }
 
     void VTMInterpreter::publish_unified()
     {
+        // 检查连接超时
+        if (connected_)
+        {
+            auto now = this->now();
+            if ((now - last_rc_time_).seconds() > connection_timeout_s_)
+            {
+                connected_ = false;
+                unified_output_.connected = false;
+                unified_output_.emergency_stop = true;
+            }
+        }
+
         if (!raw_rc_data_ || !connected_)
         {
             return;
         }
+
         unified_output_.header.stamp = this->now();
         pub_unified_->publish(unified_output_);
     }
