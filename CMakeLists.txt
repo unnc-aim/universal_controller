@@ -40,7 +40,10 @@ include_directories(include)
 # ========== 源文件列表 ==========
 set(HUB_SOURCES
   src/main.cpp
-  src/hub/hub.cpp
+  src/hub/hub_core.cpp
+  src/hub/hub_subscribers.cpp
+  src/hub/hub_arbitration.cpp
+  src/hub/hub_actions.cpp
   src/hub/rc_hub.cpp
 )
 

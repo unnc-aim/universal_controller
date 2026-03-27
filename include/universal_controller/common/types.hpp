@@ -79,6 +79,62 @@ namespace universal_controller
     };
 
     /**
+     * @brief 子系统输入源枚举
+     *
+     * 每个子系统（底盘、云台、发射）独立追踪由哪个输入源控制。
+     */
+    enum class SubsystemInput : uint8_t
+    {
+        NONE = 0,    ///< 无输入（控制器应保持安全状态）
+        RC = 1,      ///< 遥控器输入
+        AUTOAIM = 2, ///< 自瞄系统输入
+        ACTION = 3   ///< Action Server 输入（导航/行为树）
+    };
+
+    /**
+     * @brief SubsystemInput 转字符串
+     */
+    inline std::string subsystem_input_to_string(SubsystemInput input)
+    {
+        switch (input)
+        {
+        case SubsystemInput::NONE:
+            return "NONE";
+        case SubsystemInput::RC:
+            return "RC";
+        case SubsystemInput::AUTOAIM:
+            return "AUTOAIM";
+        case SubsystemInput::ACTION:
+            return "ACTION";
+        default:
+            return "UNKNOWN";
+        }
+    }
+
+    /**
+     * @brief 仲裁结果结构体
+     *
+     * 每个子系统独立追踪输入源，而非使用全局单一模式。
+     * emergency_stop 是全局覆盖：若为 true，所有控制器立即停止。
+     */
+    struct ArbitrationResult
+    {
+        bool emergency_stop{true};
+        SubsystemInput chassis{SubsystemInput::NONE};
+        SubsystemInput gimbal{SubsystemInput::NONE};
+        SubsystemInput fire{SubsystemInput::NONE};
+
+        std::string to_string() const
+        {
+            return std::string("Arbitration{estop=") +
+                   (emergency_stop ? "Y" : "N") +
+                   ", chassis=" + subsystem_input_to_string(chassis) +
+                   ", gimbal=" + subsystem_input_to_string(gimbal) +
+                   ", fire=" + subsystem_input_to_string(fire) + "}";
+        }
+    };
+
+    /**
      * @brief 底盘指令结构体
      */
     struct ChassisCommand

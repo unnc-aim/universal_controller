@@ -69,10 +69,12 @@ namespace universal_controller
         void cb_game_status(const std_msgs::msg::String::SharedPtr msg);
 
         // ========== 模式仲裁 ==========
-        ControlMode arbitrate_mode();
+        ArbitrationResult arbitrate();
         void dispatch_commands();
-        void dispatch_manual_or_autoaim();
-        void dispatch_navigation();
+        void dispatch_chassis();
+        void dispatch_gimbal();
+        void dispatch_fire();
+        bool is_autoaim_valid() const;
 
         // ========== Action Server 回调 ==========
         rclcpp_action::GoalResponse handle_gimbal_goal(
@@ -112,7 +114,7 @@ namespace universal_controller
         FireConfig fire_config_;
 
         // ========== 状态变量 ==========
-        ControlMode current_mode_{ControlMode::MANUAL};
+        ArbitrationResult arbitration_{};
         msg::UnifiedInput::SharedPtr unified_input_;
         rclcpp::Time last_unified_input_time_{0, 0, RCL_ROS_TIME};
         double unified_input_timeout_s_{0.2};
@@ -125,6 +127,7 @@ namespace universal_controller
 
         bool gimbal_action_active_{false};
         bool fire_action_active_{false};
+        bool chassis_action_active_{false};
 
         // ========== 订阅者 ==========
         rclcpp::Subscription<msg::UnifiedInput>::SharedPtr sub_unified_;
