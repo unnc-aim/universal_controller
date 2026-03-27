@@ -41,6 +41,17 @@
         steer_angle_pid: [0.3, 0.0, 0.0, 400.0, 50.0]
         steer_speed_pid: [2.6, 0.0, 0.0, 850.0, 80.0]
         drive_speed_pid: [0.7, 0.0, 0.0, 2000.0, 250.0]
+        # 功率限制（参考 H7 power_controller 模型预测方法）
+        power_limit_enabled: false
+        power_limit_default: 80.0
+        power_R: 0.7708
+        power_K: 0.0131
+        power_P0: 2.4565
+        power_K_min: 0.001
+        power_K_max: 0.1
+        power_filter_alpha: 0.1
+        # TODO
+        topic_supercap: '/ecat/sn2228292/app13/read'
 
       gimbal:
         pitch_center_ecd: 6050

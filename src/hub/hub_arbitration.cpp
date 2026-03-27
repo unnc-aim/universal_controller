@@ -97,6 +97,12 @@ namespace universal_controller
 
     void Hub::dispatch_chassis()
     {
+        // 传递裁判系统功率上限
+        if (referee_.power_limit > 0.0)
+        {
+            chassis_->set_power_limit(referee_.power_limit);
+        }
+
         switch (arbitration_.chassis)
         {
         case SubsystemInput::RC:

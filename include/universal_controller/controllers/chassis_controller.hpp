@@ -21,6 +21,7 @@
 #include "custom_msgs/msg/read_lk_motor.hpp"
 #include "custom_msgs/msg/read_lk_motor_multi.hpp"
 #include "custom_msgs/msg/write_lk_motor_broadcast_current_control.hpp"
+#include "custom_msgs/msg/read_super_cap.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
 #include <array>
@@ -54,18 +55,21 @@ namespace universal_controller
         // ========== 指令设置 ==========
         void set_command(const ChassisCommand &cmd);
         void set_motor_type(MotorType type) { motor_type_ = type; }
+        void set_power_limit(double limit);
 
         // ========== 反馈回调 ==========
         void cb_steer_dji(const custom_msgs::msg::ReadDJIMotor::SharedPtr msg);
         void cb_steer_lk(const custom_msgs::msg::ReadLkMotorMulti::SharedPtr msg);
         void cb_drive_lk(const custom_msgs::msg::ReadLkMotorMulti::SharedPtr msg);
         void cb_yaw(const custom_msgs::msg::ReadLkMotor::SharedPtr msg);
+        void cb_supercap(const custom_msgs::msg::ReadSuperCap::SharedPtr msg);
 
     private:
         // ========== 控制逻辑 ==========
         void compute_control(double dt);
         void publish_dji_commands();
         void publish_lk_commands();
+        void apply_power_limit(std::array<int16_t, 4> &drive_currents);
 
         // 坐标转换
         void transform_to_chassis_frame(double vx_g, double vy_g,
@@ -101,11 +105,19 @@ namespace universal_controller
         double gimbal_yaw_angle_{0.0};
         int yaw_center_ecd_{0};
 
+        // ========== 功率限制状态 ==========
+        double power_limit_{80.0};
+        double k_dynamic_{0.0131};
+        double supercap_chassis_only_power_{0.0};
+        bool supercap_online_{false};
+        std::array<int16_t, 4> last_drive_currents_{0, 0, 0, 0};
+
         // ========== ROS2 接口 ==========
         rclcpp::Subscription<custom_msgs::msg::ReadDJIMotor>::SharedPtr sub_steer_dji_;
         rclcpp::Subscription<custom_msgs::msg::ReadLkMotorMulti>::SharedPtr sub_steer_lk_;
         rclcpp::Subscription<custom_msgs::msg::ReadLkMotorMulti>::SharedPtr sub_drive_lk_;
         rclcpp::Subscription<custom_msgs::msg::ReadLkMotor>::SharedPtr sub_yaw_;
+        rclcpp::Subscription<custom_msgs::msg::ReadSuperCap>::SharedPtr sub_supercap_;
 
         rclcpp::Publisher<custom_msgs::msg::WriteDJIMotor>::SharedPtr pub_drive_dji_;
         rclcpp::Publisher<custom_msgs::msg::WriteDJIMotor>::SharedPtr pub_steer_dji_;
