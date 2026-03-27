@@ -63,8 +63,8 @@ namespace universal_controller
         // ========== 外部输入回调 ==========
         void cb_nav_vel(const geometry_msgs::msg::Twist::SharedPtr msg);
         void cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg);
-        void cb_referee(const std_msgs::msg::Float32MultiArray::SharedPtr msg);
-        void cb_game_status(const std_msgs::msg::String::SharedPtr msg);
+        void cb_referee_constraints(const std_msgs::msg::Float32MultiArray::SharedPtr msg);
+        void cb_referee_game_status(const std_msgs::msg::String::SharedPtr msg);
 
         // ========== 模式仲裁 ==========
         ArbitrationResult arbitrate();

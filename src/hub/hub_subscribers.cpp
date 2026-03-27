@@ -22,7 +22,7 @@ namespace universal_controller
         autoaim_valid_ = true;
     }
 
-    void Hub::cb_referee(const std_msgs::msg::Float32MultiArray::SharedPtr msg)
+    void Hub::cb_referee_constraints(const std_msgs::msg::Float32MultiArray::SharedPtr msg)
     {
         if (msg->data.size() < 6)
             return;
@@ -38,7 +38,7 @@ namespace universal_controller
         fire_->update_referee_constraints(referee_);
     }
 
-    void Hub::cb_game_status(const std_msgs::msg::String::SharedPtr msg)
+    void Hub::cb_referee_game_status(const std_msgs::msg::String::SharedPtr msg)
     {
         try
         {

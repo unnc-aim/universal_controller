@@ -68,12 +68,12 @@ namespace universal_controller
         std::string topic_referee = config_loader_.get_string("topics.referee_constraints", "/referee/constraints");
         sub_referee_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
             topic_referee, qos_best_effort_,
-            std::bind(&Hub::cb_referee, this, std::placeholders::_1));
+            std::bind(&Hub::cb_referee_constraints, this, std::placeholders::_1));
 
         std::string topic_game_status = config_loader_.get_string("topics.referee_game_status", "/referee/game_status");
         sub_game_status_ = this->create_subscription<std_msgs::msg::String>(
             topic_game_status, qos_best_effort_,
-            std::bind(&Hub::cb_game_status, this, std::placeholders::_1));
+            std::bind(&Hub::cb_referee_game_status, this, std::placeholders::_1));
 
         // 控制定时器（1000Hz）
         int freq = config_loader_.get_int("control_frequency", 1000);
