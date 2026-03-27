@@ -36,12 +36,8 @@ namespace universal_controller
         }
         result.emergency_stop = false;
 
-        // --- 底盘：Action > Navigation > RC ---
-        if (chassis_action_active_)
-        {
-            result.chassis = SubsystemInput::ACTION;
-        }
-        else if (unified_input_->navigation_enabled && is_nav_vel_valid())
+        // --- 底盘：Navigation > RC ---
+        if (unified_input_->navigation_enabled && is_nav_vel_valid())
         {
             result.chassis = SubsystemInput::NAVIGATION;
         }
@@ -50,12 +46,8 @@ namespace universal_controller
             result.chassis = SubsystemInput::RC;
         }
 
-        // --- 云台：Action > Autoaim > RC ---
-        if (gimbal_action_active_)
-        {
-            result.gimbal = SubsystemInput::ACTION;
-        }
-        else if (is_autoaim_valid())
+        // --- 云台：Autoaim > RC ---
+        if (is_autoaim_valid())
         {
             result.gimbal = SubsystemInput::AUTOAIM;
         }
@@ -64,10 +56,8 @@ namespace universal_controller
             result.gimbal = SubsystemInput::RC;
         }
 
-        // --- 发射：Action > RC ---
-        result.fire = fire_action_active_
-                          ? SubsystemInput::ACTION
-                          : SubsystemInput::RC;
+        // --- 发射：RC ---
+        result.fire = SubsystemInput::RC;
 
         return result;
     }
@@ -132,9 +122,6 @@ namespace universal_controller
             chassis_->set_command(cmd);
             break;
         }
-        case SubsystemInput::ACTION:
-            // Action Server 已直接调用 set_command()，不覆盖
-            break;
         default:
             break;
         }
@@ -150,7 +137,6 @@ namespace universal_controller
             cmd.pitch_deg = unified_input_->pitch_delta;
             cmd.yaw_rad = unified_input_->yaw_delta;
             cmd.autoaim_enabled = false;
-            cmd.from_action = false;
             cmd.absolute = false;
             gimbal_->set_command(cmd);
             break;
@@ -161,14 +147,10 @@ namespace universal_controller
             cmd.yaw_rad = autoaim_cmd_->yaw;
             cmd.pitch_deg = -autoaim_cmd_->pitch * (180.0 / M_PI);
             cmd.autoaim_enabled = true;
-            cmd.from_action = false;
             cmd.absolute = true;
             gimbal_->set_command(cmd);
             break;
         }
-        case SubsystemInput::ACTION:
-            // Action Server 已直接调用 set_command()，不覆盖
-            break;
         default:
             break;
         }
@@ -185,13 +167,9 @@ namespace universal_controller
             cmd.trigger_fire = unified_input_->fire_trigger;
             cmd.burst_mode = unified_input_->burst_mode;
             cmd.friction_speed = unified_input_->friction_speed;
-            cmd.from_action = false;
             fire_->set_command(cmd);
             break;
         }
-        case SubsystemInput::ACTION:
-            // Action Server 已直接调用 set_command()，不覆盖
-            break;
         default:
             break;
         }

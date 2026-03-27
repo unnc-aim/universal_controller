@@ -88,8 +88,7 @@ namespace universal_controller
         NONE = 0,       ///< 无输入（控制器应保持安全状态）
         RC = 1,         ///< 遥控器输入
         AUTOAIM = 2,    ///< 自瞄系统输入
-        ACTION = 3,     ///< Action Server 输入（导航/行为树）
-        NAVIGATION = 4  ///< 导航速度输入（/cmd_vel）
+        NAVIGATION = 3  ///< 导航速度输入（/cmd_vel）
     };
 
     /**
@@ -105,8 +104,6 @@ namespace universal_controller
             return "RC";
         case SubsystemInput::AUTOAIM:
             return "AUTOAIM";
-        case SubsystemInput::ACTION:
-            return "ACTION";
         case SubsystemInput::NAVIGATION:
             return "NAVIGATION";
         default:

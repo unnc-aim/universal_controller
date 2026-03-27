@@ -16,7 +16,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ========== 查找依赖包 ==========
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -26,11 +25,9 @@ find_package(custom_msgs REQUIRED)
 find_package(sp_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
-# ========== 消息/Action 生成 ==========
+# ========== 消息生成 ==========
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/UnifiedInput.msg"
-  "action/GimbalControl.action"
-  "action/FireControl.action"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
@@ -43,7 +40,6 @@ set(HUB_SOURCES
   src/hub/hub_core.cpp
   src/hub/hub_subscribers.cpp
   src/hub/hub_arbitration.cpp
-  src/hub/hub_actions.cpp
   src/hub/hub_rc.cpp
 )
 
@@ -77,7 +73,6 @@ add_executable(universal_controller_node
 
 ament_target_dependencies(universal_controller_node
   rclcpp
-  rclcpp_action
   ament_index_cpp
   sensor_msgs
   geometry_msgs

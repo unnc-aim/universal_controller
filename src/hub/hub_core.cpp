@@ -75,19 +75,6 @@ namespace universal_controller
             topic_game_status, qos_best_effort_,
             std::bind(&Hub::cb_game_status, this, std::placeholders::_1));
 
-        // Action Servers
-        gimbal_action_server_ = rclcpp_action::create_server<GimbalControl>(
-            this, "/universal_controller/gimbal_control",
-            std::bind(&Hub::handle_gimbal_goal, this, std::placeholders::_1, std::placeholders::_2),
-            std::bind(&Hub::handle_gimbal_cancel, this, std::placeholders::_1),
-            std::bind(&Hub::execute_gimbal_goal, this, std::placeholders::_1));
-
-        fire_action_server_ = rclcpp_action::create_server<FireControl>(
-            this, "/universal_controller/fire_control",
-            std::bind(&Hub::handle_fire_goal, this, std::placeholders::_1, std::placeholders::_2),
-            std::bind(&Hub::handle_fire_cancel, this, std::placeholders::_1),
-            std::bind(&Hub::execute_fire_goal, this, std::placeholders::_1));
-
         // 控制定时器（1000Hz）
         int freq = config_loader_.get_int("control_frequency", 1000);
         timer_ = this->create_wall_timer(

@@ -6,13 +6,11 @@
  * - 接收并聚合所有输入源（RC、自瞄、导航）
  * - 模式仲裁（急停 > 导航 > 自瞄 > 手动）
  * - 分发指令到各子控制器
- * - 提供 Action Server 供导航/行为树调用
  */
 
 #pragma once
 
 #include <rclcpp/rclcpp.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
 
 #include <optional>
 #include <string>
@@ -25,8 +23,6 @@
 #include "universal_controller/controllers/fire_controller.hpp"
 
 #include "universal_controller/msg/unified_input.hpp"
-#include "universal_controller/action/gimbal_control.hpp"
-#include "universal_controller/action/fire_control.hpp"
 #include "sp_msgs/msg/auto_aim_command_msg.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -41,16 +37,6 @@ namespace universal_controller
     class Hub : public rclcpp::Node
     {
     public:
-        using GimbalControl = universal_controller::action::GimbalControl;
-        using GimbalControlGoal = GimbalControl::Goal;
-        using GimbalControlResult = GimbalControl::Result;
-        using GimbalControlFeedback = GimbalControl::Feedback;
-
-        using FireControl = universal_controller::action::FireControl;
-        using FireControlGoal = FireControl::Goal;
-        using FireControlResult = FireControl::Result;
-        using FireControlFeedback = FireControl::Feedback;
-
         Hub(std::shared_ptr<ChassisController> chassis,
             std::shared_ptr<GimbalController> gimbal,
             std::shared_ptr<FireController> fire);
@@ -87,27 +73,7 @@ namespace universal_controller
         void dispatch_gimbal();
         void dispatch_fire();
         bool is_autoaim_valid() const;
-
-        // ========== Action Server 回调 ==========
-        rclcpp_action::GoalResponse handle_gimbal_goal(
-            const rclcpp_action::GoalUUID &uuid,
-            std::shared_ptr<const GimbalControlGoal> goal);
-
-        rclcpp_action::CancelResponse handle_gimbal_cancel(
-            const std::shared_ptr<rclcpp_action::ServerGoalHandle<GimbalControl>> goal_handle);
-
-        void execute_gimbal_goal(
-            const std::shared_ptr<rclcpp_action::ServerGoalHandle<GimbalControl>> goal_handle);
-
-        rclcpp_action::GoalResponse handle_fire_goal(
-            const rclcpp_action::GoalUUID &uuid,
-            std::shared_ptr<const FireControlGoal> goal);
-
-        rclcpp_action::CancelResponse handle_fire_cancel(
-            const std::shared_ptr<rclcpp_action::ServerGoalHandle<FireControl>> goal_handle);
-
-        void execute_fire_goal(
-            const std::shared_ptr<rclcpp_action::ServerGoalHandle<FireControl>> goal_handle);
+        bool is_nav_vel_valid() const;
 
         // ========== 控制器 ==========
         std::shared_ptr<ChassisController> chassis_;
@@ -131,16 +97,12 @@ namespace universal_controller
         sp_msgs::msg::AutoAimCommandMsg::SharedPtr autoaim_cmd_;
         bool autoaim_valid_{false};
         double autoaim_last_time_{0.0};
-        geometry_msgs::msg::Twist::SharedPtr nav_cmd_vel_;  // 导航速度指令
+        geometry_msgs::msg::Twist::SharedPtr nav_cmd_vel_;
         rclcpp::Time nav_vel_last_time_{0, 0, RCL_ROS_TIME};
         double nav_vel_timeout_s_{0.2};
 
         RefereeConstraints referee_;
         bool game_started_{false};
-
-        bool gimbal_action_active_{false};
-        bool fire_action_active_{false};
-        bool chassis_action_active_{false};
 
         // ========== RC 融合状态 ==========
         msg::UnifiedInput::SharedPtr vtm_input_;
@@ -158,10 +120,6 @@ namespace universal_controller
         rclcpp::Subscription<sp_msgs::msg::AutoAimCommandMsg>::SharedPtr sub_autoaim_;
         rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr sub_referee_;
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_game_status_;
-
-        // ========== Action Servers ==========
-        rclcpp_action::Server<GimbalControl>::SharedPtr gimbal_action_server_;
-        rclcpp_action::Server<FireControl>::SharedPtr fire_action_server_;
 
         // ========== 定时器 ==========
         rclcpp::TimerBase::SharedPtr timer_;
