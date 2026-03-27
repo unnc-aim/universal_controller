@@ -37,6 +37,10 @@
 *.out
 *.app
 
+build/
+install/
+log/
+
 # debug information files
 *.dwo
 .vscode/browse.vc.db
