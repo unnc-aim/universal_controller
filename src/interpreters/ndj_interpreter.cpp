@@ -34,7 +34,7 @@ namespace universal_controller
             std::bind(&NDJInterpreter::publish_unified, this));
 
         // 初始化输出
-        unified_output_.control_source = "NDJ";
+        unified_output_.control_source = "ndj";
         unified_output_.connected = false;
 
         RCLCPP_INFO(this->get_logger(), "NDJ Interpreter started (ReadDJIRC)");
@@ -206,7 +206,7 @@ namespace universal_controller
 
         const auto &rc = *raw_rc_data_;
         unified_output_.connected = connected_;
-        unified_output_.control_source = "NDJ";
+        unified_output_.control_source = "ndj";
         unified_output_.header.stamp = this->now();
         feeder_state_ = false; // 每帧重置单发状态
 
