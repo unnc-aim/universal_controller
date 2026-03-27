@@ -1,6 +1,6 @@
 /**
  * @file hub_subscribers.cpp
- * @brief Hub 订阅回调
+ * @brief Hub 外部输入订阅回调（自瞄、裁判系统）
  */
 
 #include "universal_controller/hub/hub.hpp"
@@ -8,12 +8,6 @@
 
 namespace universal_controller
 {
-
-    void Hub::cb_unified_input(const msg::UnifiedInput::SharedPtr msg)
-    {
-        unified_input_ = msg;
-        last_unified_input_time_ = this->now();
-    }
 
     void Hub::cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg)
     {

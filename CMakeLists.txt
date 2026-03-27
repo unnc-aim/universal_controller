@@ -44,7 +44,7 @@ set(HUB_SOURCES
   src/hub/hub_subscribers.cpp
   src/hub/hub_arbitration.cpp
   src/hub/hub_actions.cpp
-  src/hub/rc_hub.cpp
+  src/hub/hub_rc.cpp
 )
 
 set(VTM_INTERPRETER_SOURCES

@@ -14,6 +14,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 
+#include <optional>
+#include <string>
+#include <vector>
+
 #include "universal_controller/common/types.hpp"
 #include "universal_controller/common/config.hpp"
 #include "universal_controller/controllers/chassis_controller.hpp"
@@ -62,8 +66,14 @@ namespace universal_controller
         // ========== 控制循环 ==========
         void control_loop();
 
-        // ========== 输入订阅回调 ==========
-        void cb_unified_input(const msg::UnifiedInput::SharedPtr msg);
+        // ========== RC 输入融合 ==========
+        void rc_fuse();
+        void cb_vtm_input(const msg::UnifiedInput::SharedPtr msg);
+        void cb_ndj_input(const msg::UnifiedInput::SharedPtr msg);
+        bool is_rc_source_connected(const msg::UnifiedInput::SharedPtr &msg, const rclcpp::Time &stamp) const;
+        std::optional<msg::UnifiedInput::SharedPtr> get_rc_source_by_name(const std::string &name) const;
+
+        // ========== 外部输入回调 ==========
         void cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg);
         void cb_referee(const std_msgs::msg::Float32MultiArray::SharedPtr msg);
         void cb_game_status(const std_msgs::msg::String::SharedPtr msg);
@@ -116,8 +126,6 @@ namespace universal_controller
         // ========== 状态变量 ==========
         ArbitrationResult arbitration_{};
         msg::UnifiedInput::SharedPtr unified_input_;
-        rclcpp::Time last_unified_input_time_{0, 0, RCL_ROS_TIME};
-        double unified_input_timeout_s_{0.2};
         sp_msgs::msg::AutoAimCommandMsg::SharedPtr autoaim_cmd_;
         bool autoaim_valid_{false};
         double autoaim_last_time_{0.0};
@@ -129,8 +137,18 @@ namespace universal_controller
         bool fire_action_active_{false};
         bool chassis_action_active_{false};
 
+        // ========== RC 融合状态 ==========
+        msg::UnifiedInput::SharedPtr vtm_input_;
+        msg::UnifiedInput::SharedPtr ndj_input_;
+        rclcpp::Time vtm_last_time_{0, 0, RCL_ROS_TIME};
+        rclcpp::Time ndj_last_time_{0, 0, RCL_ROS_TIME};
+        std::vector<std::string> rc_priority_{"vtm", "ndj"};
+        double rc_connection_timeout_s_{0.5};
+        double rc_analog_zero_epsilon_{1e-6};
+
         // ========== 订阅者 ==========
-        rclcpp::Subscription<msg::UnifiedInput>::SharedPtr sub_unified_;
+        rclcpp::Subscription<msg::UnifiedInput>::SharedPtr sub_vtm_;
+        rclcpp::Subscription<msg::UnifiedInput>::SharedPtr sub_ndj_;
         rclcpp::Subscription<sp_msgs::msg::AutoAimCommandMsg>::SharedPtr sub_autoaim_;
         rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr sub_referee_;
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_game_status_;

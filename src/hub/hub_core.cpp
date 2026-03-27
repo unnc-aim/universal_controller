@@ -42,11 +42,15 @@ namespace universal_controller
 
         fire_->init(fire_node_.get(), config_loader_);
 
-        // 订阅 RC Hub 输出的统一输入
-        std::string topic_unified = config_loader_.get_string("topics.unified_input", "/universal_controller/hub/rc_unified_input");
-        sub_unified_ = this->create_subscription<msg::UnifiedInput>(
-            topic_unified, qos_best_effort_,
-            std::bind(&Hub::cb_unified_input, this, std::placeholders::_1));
+        // 订阅 RC 输入源（VTM / NDJ）
+        std::string topic_vtm = config_loader_.get_string("rc_hub.topic_vtm_input", "/universal_controller/rc_hub/vtm");
+        std::string topic_ndj = config_loader_.get_string("rc_hub.topic_ndj_input", "/universal_controller/rc_hub/ndj");
+        sub_vtm_ = this->create_subscription<msg::UnifiedInput>(
+            topic_vtm, qos_best_effort_,
+            std::bind(&Hub::cb_vtm_input, this, std::placeholders::_1));
+        sub_ndj_ = this->create_subscription<msg::UnifiedInput>(
+            topic_ndj, qos_best_effort_,
+            std::bind(&Hub::cb_ndj_input, this, std::placeholders::_1));
 
         // 订阅自瞄指令
         std::string topic_autoaim = config_loader_.get_string("topics.autoaim_cmd", "/sp_vision/autoaim_command");
@@ -86,21 +90,34 @@ namespace universal_controller
 
         last_update_time_ = this->now();
 
-        RCLCPP_INFO(this->get_logger(), "Hub started @ %d Hz, unified_input=%s", freq, topic_unified.c_str());
+        RCLCPP_INFO(this->get_logger(), "Hub started @ %d Hz, vtm=%s, ndj=%s", freq, topic_vtm.c_str(), topic_ndj.c_str());
     }
 
     void Hub::declare_parameters()
     {
+        // 控制参数
         this->declare_parameter("control_frequency", 1000);
-        this->declare_parameter("topics.unified_input", "/universal_controller/hub/rc_unified_input");
-        this->declare_parameter("topics.unified_input_timeout_s", 0.2);
         this->declare_parameter("topics.autoaim_cmd", "/sp_vision/autoaim_command");
         this->declare_parameter("topics.referee_constraints", "/referee/constraints");
         this->declare_parameter("topics.referee_game_status", "/referee/game_status");
         this->declare_parameter("autoaim_timeout_s", 0.2);
         this->declare_parameter("referee_timeout_s", 0.5);
 
-        unified_input_timeout_s_ = this->get_parameter("topics.unified_input_timeout_s").as_double();
+        // RC 融合参数
+        this->declare_parameter("rc_hub.topic_vtm_input", "/universal_controller/rc_hub/vtm");
+        this->declare_parameter("rc_hub.topic_ndj_input", "/universal_controller/rc_hub/ndj");
+        this->declare_parameter("rc_hub.connection_timeout_s", 0.5);
+        this->declare_parameter("rc_hub.priority", std::vector<std::string>{"vtm", "ndj"});
+        this->declare_parameter("rc_hub.analog_zero_epsilon", 1e-6);
+
+        // 加载 RC 融合参数
+        rc_connection_timeout_s_ = this->get_parameter("rc_hub.connection_timeout_s").as_double();
+        rc_priority_ = this->get_parameter("rc_hub.priority").as_string_array();
+        rc_analog_zero_epsilon_ = this->get_parameter("rc_hub.analog_zero_epsilon").as_double();
+        if (rc_priority_.empty())
+        {
+            rc_priority_ = {"vtm", "ndj"};
+        }
     }
 
     void Hub::control_loop()
@@ -109,11 +126,8 @@ namespace universal_controller
         double dt = (now - last_update_time_).seconds();
         last_update_time_ = now;
 
-        if (last_unified_input_time_.nanoseconds() == 0 ||
-            (now - last_unified_input_time_).seconds() > unified_input_timeout_s_)
-        {
-            unified_input_.reset();
-        }
+        // RC 融合（直接在控制循环中执行）
+        rc_fuse();
 
         // 模式仲裁
         arbitration_ = arbitrate();

@@ -6,7 +6,6 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "universal_controller/hub/hub.hpp"
-#include "universal_controller/hub/rc_hub.hpp"
 #include "universal_controller/interpreters/vtm_interpreter.hpp"
 #include "universal_controller/interpreters/ndj_interpreter.hpp"
 #include "universal_controller/controllers/chassis_controller.hpp"
@@ -19,7 +18,6 @@ int main(int argc, char **argv)
 
     auto vtm_interpreter = std::make_shared<universal_controller::VTMInterpreter>();
     auto ndj_interpreter = std::make_shared<universal_controller::NDJInterpreter>();
-    auto rc_hub = std::make_shared<universal_controller::RCHub>();
     auto chassis_controller = std::make_shared<universal_controller::ChassisController>();
     auto gimbal_controller = std::make_shared<universal_controller::GimbalController>();
     auto fire_controller = std::make_shared<universal_controller::FireController>();
@@ -29,7 +27,6 @@ int main(int argc, char **argv)
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(vtm_interpreter);
     executor.add_node(ndj_interpreter);
-    executor.add_node(rc_hub);
     executor.add_node(hub->get_chassis_node());
     executor.add_node(hub->get_gimbal_node());
     executor.add_node(hub->get_fire_node());
