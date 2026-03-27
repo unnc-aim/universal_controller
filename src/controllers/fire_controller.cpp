@@ -71,6 +71,9 @@ namespace universal_controller
     {
         if (!config_.enabled || !command_valid_)
         {
+            trigger_target_ecd_ = total_ecd_;
+            trigger_has_fired_ = false;
+            stop_all();
             return;
         }
         compute_control(dt);
@@ -204,10 +207,10 @@ namespace universal_controller
         }
         else
         {
-            // 关闭摩擦轮时同时撤销使能，避免电机抱死啸叫
-            msg.motor1_enable = 0;
+            // 与 Python 版一致：停机时保持使能，仅下发 0 转速
+            msg.motor1_enable = 1;
             msg.motor1_cmd = 0;
-            msg.motor2_enable = 0;
+            msg.motor2_enable = 1;
             msg.motor2_cmd = 0;
         }
 

@@ -61,7 +61,7 @@
       fire:
         enabled: true
         friction_speed_default: 6500.0
-        shot_period_ms: 30.0
+        shot_period_ms: 50.0
         load_current_threshold: 500
         load_speed_ecd: 2.5
         topic_fire_write: '/ecat/sn4653115/app3/write'
