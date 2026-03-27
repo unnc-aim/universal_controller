@@ -4,7 +4,6 @@
  */
 
 #include "universal_controller/hub/hub.hpp"
-#include <nlohmann/json.hpp>
 
 namespace universal_controller
 {
@@ -22,36 +21,24 @@ namespace universal_controller
         autoaim_valid_ = true;
     }
 
-    void Hub::cb_referee_constraints(const std_msgs::msg::Float32MultiArray::SharedPtr msg)
+    void Hub::cb_referee_constraints(const dji_referee_protocol::msg::Constraints::SharedPtr msg)
     {
-        if (msg->data.size() < 6)
-            return;
-
-        referee_.heat = msg->data[0];
-        referee_.heat_limit = msg->data[1];
-        referee_.power = msg->data[2];
-        referee_.power_limit = msg->data[3];
-        referee_.fire_allowed = (msg->data[4] > 0.5);
-        referee_.speed_scale = msg->data[5];
+        referee_.heat = msg->shooter_heat;
+        referee_.heat_limit = msg->heat_limit;
+        referee_.power = msg->chassis_power;
+        referee_.power_limit = msg->chassis_power_limit;
+        referee_.fire_allowed = msg->fire_allowed;
+        referee_.speed_scale = msg->speed_scale;
         referee_.timestamp = this->now().seconds();
 
         fire_->update_referee_constraints(referee_);
     }
 
-    void Hub::cb_referee_game_status(const std_msgs::msg::String::SharedPtr msg)
+    void Hub::cb_referee_game_status(const dji_referee_protocol::msg::GameStatus::SharedPtr msg)
     {
-        try
-        {
-            auto parsed = nlohmann::json::parse(msg->data);
-            if (parsed.contains("data") && parsed["data"].contains("game_progress"))
-            {
-                int progress = parsed["data"]["game_progress"];
-                game_started_ = (progress == 4); // 4 = 比赛中
-            }
-        }
-        catch (...)
-        {
-        }
+        // 使用常量判断比赛阶段
+        using namespace dji_referee_protocol::msg;
+        game_started_ = (msg->game_progress == Constants::GAME_STAGE_IN_GAME);
     }
 
 } // namespace universal_controller

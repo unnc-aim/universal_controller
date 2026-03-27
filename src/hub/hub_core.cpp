@@ -65,13 +65,13 @@ namespace universal_controller
             std::bind(&Hub::cb_nav_vel, this, std::placeholders::_1));
 
         // 订阅裁判系统
-        std::string topic_referee = config_loader_.get_string("topics.referee_constraints", "/referee/constraints");
-        sub_referee_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
+        std::string topic_referee = config_loader_.get_string("topics.referee_constraints", "/referee/parsed/common/constraints");
+        sub_referee_ = this->create_subscription<dji_referee_protocol::msg::Constraints>(
             topic_referee, qos_best_effort_,
             std::bind(&Hub::cb_referee_constraints, this, std::placeholders::_1));
 
-        std::string topic_game_status = config_loader_.get_string("topics.referee_game_status", "/referee/game_status");
-        sub_game_status_ = this->create_subscription<std_msgs::msg::String>(
+        std::string topic_game_status = config_loader_.get_string("topics.referee_game_status", "/referee/common/game_status");
+        sub_game_status_ = this->create_subscription<dji_referee_protocol::msg::GameStatus>(
             topic_game_status, qos_best_effort_,
             std::bind(&Hub::cb_referee_game_status, this, std::placeholders::_1));
 
@@ -91,8 +91,8 @@ namespace universal_controller
         // 控制参数
         this->declare_parameter("control_frequency", 1000);
         this->declare_parameter("topics.autoaim_cmd", "/sp_vision/autoaim_command");
-        this->declare_parameter("topics.referee_constraints", "/referee/constraints");
-        this->declare_parameter("topics.referee_game_status", "/referee/game_status");
+        this->declare_parameter("topics.referee_constraints", "/referee/parsed/common/constraints");
+        this->declare_parameter("topics.referee_game_status", "/referee/common/game_status");
         this->declare_parameter("autoaim_timeout_s", 0.2);
         this->declare_parameter("referee_timeout_s", 0.5);
         this->declare_parameter("nav_vel_timeout_s", 0.2);

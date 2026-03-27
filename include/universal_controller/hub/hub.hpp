@@ -24,9 +24,12 @@
 
 #include "universal_controller/msg/unified_input.hpp"
 #include "sp_msgs/msg/auto_aim_command_msg.hpp"
-#include "std_msgs/msg/float32_multi_array.hpp"
-#include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+
+// DJI裁判系统自定义消息
+#include "dji_referee_protocol/msg/constraints.hpp"
+#include "dji_referee_protocol/msg/game_status.hpp"
+#include "dji_referee_protocol/msg/constants.hpp"
 
 namespace universal_controller
 {
@@ -63,8 +66,8 @@ namespace universal_controller
         // ========== 外部输入回调 ==========
         void cb_nav_vel(const geometry_msgs::msg::Twist::SharedPtr msg);
         void cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg);
-        void cb_referee_constraints(const std_msgs::msg::Float32MultiArray::SharedPtr msg);
-        void cb_referee_game_status(const std_msgs::msg::String::SharedPtr msg);
+        void cb_referee_constraints(const dji_referee_protocol::msg::Constraints::SharedPtr msg);
+        void cb_referee_game_status(const dji_referee_protocol::msg::GameStatus::SharedPtr msg);
 
         // ========== 模式仲裁 ==========
         ArbitrationResult arbitrate();
@@ -118,8 +121,8 @@ namespace universal_controller
         rclcpp::Subscription<msg::UnifiedInput>::SharedPtr sub_ndj_;
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_nav_vel_;
         rclcpp::Subscription<sp_msgs::msg::AutoAimCommandMsg>::SharedPtr sub_autoaim_;
-        rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr sub_referee_;
-        rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_game_status_;
+        rclcpp::Subscription<dji_referee_protocol::msg::Constraints>::SharedPtr sub_referee_;
+        rclcpp::Subscription<dji_referee_protocol::msg::GameStatus>::SharedPtr sub_game_status_;
 
         // ========== 定时器 ==========
         rclcpp::TimerBase::SharedPtr timer_;

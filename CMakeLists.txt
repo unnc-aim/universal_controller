@@ -23,6 +23,7 @@ find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(custom_msgs REQUIRED)
 find_package(sp_msgs REQUIRED)
+find_package(dji_referee_protocol REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 # ========== 消息生成 ==========
@@ -79,6 +80,7 @@ ament_target_dependencies(universal_controller_node
   std_msgs
   custom_msgs
   sp_msgs
+  dji_referee_protocol
 )
 
 rosidl_get_typesupport_target(universal_controller_node_typesupport
