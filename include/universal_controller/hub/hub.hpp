@@ -30,6 +30,7 @@
 #include "sp_msgs/msg/auto_aim_command_msg.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 
 namespace universal_controller
 {
@@ -74,6 +75,7 @@ namespace universal_controller
         std::optional<msg::UnifiedInput::SharedPtr> get_rc_source_by_name(const std::string &name) const;
 
         // ========== 外部输入回调 ==========
+        void cb_nav_vel(const geometry_msgs::msg::Twist::SharedPtr msg);
         void cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg);
         void cb_referee(const std_msgs::msg::Float32MultiArray::SharedPtr msg);
         void cb_game_status(const std_msgs::msg::String::SharedPtr msg);
@@ -129,6 +131,9 @@ namespace universal_controller
         sp_msgs::msg::AutoAimCommandMsg::SharedPtr autoaim_cmd_;
         bool autoaim_valid_{false};
         double autoaim_last_time_{0.0};
+        geometry_msgs::msg::Twist::SharedPtr nav_cmd_vel_;  // 导航速度指令
+        rclcpp::Time nav_vel_last_time_{0, 0, RCL_ROS_TIME};
+        double nav_vel_timeout_s_{0.2};
 
         RefereeConstraints referee_;
         bool game_started_{false};
@@ -149,6 +154,7 @@ namespace universal_controller
         // ========== 订阅者 ==========
         rclcpp::Subscription<msg::UnifiedInput>::SharedPtr sub_vtm_;
         rclcpp::Subscription<msg::UnifiedInput>::SharedPtr sub_ndj_;
+        rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_nav_vel_;
         rclcpp::Subscription<sp_msgs::msg::AutoAimCommandMsg>::SharedPtr sub_autoaim_;
         rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr sub_referee_;
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_game_status_;

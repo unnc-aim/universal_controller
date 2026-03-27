@@ -58,6 +58,12 @@ namespace universal_controller
             topic_autoaim, qos_best_effort_,
             std::bind(&Hub::cb_autoaim, this, std::placeholders::_1));
 
+        // 订阅导航速度指令
+        std::string topic_nav_vel = config_loader_.get_string("topics.nav_cmd_vel", "/cmd_vel");
+        sub_nav_vel_ = this->create_subscription<geometry_msgs::msg::Twist>(
+            topic_nav_vel, qos_best_effort_,
+            std::bind(&Hub::cb_nav_vel, this, std::placeholders::_1));
+
         // 订阅裁判系统
         std::string topic_referee = config_loader_.get_string("topics.referee_constraints", "/referee/constraints");
         sub_referee_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
@@ -102,6 +108,8 @@ namespace universal_controller
         this->declare_parameter("topics.referee_game_status", "/referee/game_status");
         this->declare_parameter("autoaim_timeout_s", 0.2);
         this->declare_parameter("referee_timeout_s", 0.5);
+        this->declare_parameter("nav_vel_timeout_s", 0.2);
+        this->declare_parameter("topics.nav_cmd_vel", "/cmd_vel");
 
         // RC 融合参数
         this->declare_parameter("rc_hub.topic_vtm_input", "/universal_controller/rc_hub/vtm");

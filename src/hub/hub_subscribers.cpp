@@ -1,6 +1,6 @@
 /**
  * @file hub_subscribers.cpp
- * @brief Hub 外部输入订阅回调（自瞄、裁判系统）
+ * @brief Hub 外部输入订阅回调（自瞄、裁判系统、导航速度）
  */
 
 #include "universal_controller/hub/hub.hpp"
@@ -8,6 +8,12 @@
 
 namespace universal_controller
 {
+
+    void Hub::cb_nav_vel(const geometry_msgs::msg::Twist::SharedPtr msg)
+    {
+        nav_cmd_vel_ = msg;
+        nav_vel_last_time_ = this->now();
+    }
 
     void Hub::cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg)
     {

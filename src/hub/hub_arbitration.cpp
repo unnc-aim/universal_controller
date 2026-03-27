@@ -9,6 +9,19 @@
 namespace universal_controller
 {
 
+    bool Hub::is_nav_vel_valid() const
+    {
+        if (!nav_cmd_vel_)
+        {
+            return false;
+        }
+        if (nav_vel_last_time_.nanoseconds() == 0)
+        {
+            return false;
+        }
+        return (this->now() - nav_vel_last_time_).seconds() < nav_vel_timeout_s_;
+    }
+
     ArbitrationResult Hub::arbitrate()
     {
         ArbitrationResult result;
@@ -23,10 +36,19 @@ namespace universal_controller
         }
         result.emergency_stop = false;
 
-        // --- 底盘：Action > RC ---
-        result.chassis = chassis_action_active_
-                             ? SubsystemInput::ACTION
-                             : SubsystemInput::RC;
+        // --- 底盘：Action > Navigation > RC ---
+        if (chassis_action_active_)
+        {
+            result.chassis = SubsystemInput::ACTION;
+        }
+        else if (unified_input_->navigation_enabled && is_nav_vel_valid())
+        {
+            result.chassis = SubsystemInput::NAVIGATION;
+        }
+        else
+        {
+            result.chassis = SubsystemInput::RC;
+        }
 
         // --- 云台：Action > Autoaim > RC ---
         if (gimbal_action_active_)
@@ -95,6 +117,18 @@ namespace universal_controller
             cmd.wz = unified_input_->wz;
             cmd.spin_mode = unified_input_->spin_mode;
             cmd.spin_speed = unified_input_->spin_speed;
+            chassis_->set_command(cmd);
+            break;
+        }
+        case SubsystemInput::NAVIGATION:
+        {
+            // 使用导航速度指令
+            ChassisCommand cmd;
+            cmd.vx_gimbal = nav_cmd_vel_->linear.x;
+            cmd.vy_gimbal = nav_cmd_vel_->linear.y;
+            cmd.wz = nav_cmd_vel_->angular.z;
+            cmd.spin_mode = false;
+            cmd.spin_speed = 0.0;
             chassis_->set_command(cmd);
             break;
         }
