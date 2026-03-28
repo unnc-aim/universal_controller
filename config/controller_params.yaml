@@ -92,7 +92,7 @@
       spin_speed_default: 3000.0
       spin_speed_min: 800.0
       spin_speed_max: 6500.0
-      spin_dial_gain: 6.0
+      spin_dial_gain: 1.0
       spin_key_gain: 2.4
       spin_dial_deadzone: 0.05
 
