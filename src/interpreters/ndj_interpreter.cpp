@@ -433,9 +433,20 @@ namespace universal_controller
             }
         }
 
-        if (!raw_rc_data_ || !connected_)
+        if (!raw_rc_data_)
         {
             return;
+        }
+
+        if(!connected_)
+        {
+            unified_output_.connected = false;
+            unified_output_.emergency_stop = true;
+            unified_output_.friction_on = false;
+            unified_output_.fire_trigger = false;
+            unified_output_.burst_mode = false;
+            unified_output_.header.stamp = this->now();
+            pub_unified_->publish(unified_output_);
         }
 
         unified_output_.header.stamp = this->now();
