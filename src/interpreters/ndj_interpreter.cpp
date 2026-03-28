@@ -215,7 +215,11 @@ namespace universal_controller
             execute_trigger_actions(rc);
         }
 
-        // ========== 1. 离线或急停检测 ==========
+        // ========== 1. 速度分档与小陀螺调速（急停状态也允许预设） ==========
+        input_processor_.update_keyboard_speed(rc.shift == 1, rc.ctrl == 1);
+        input_processor_.update_spin_speed(rc.dial, rc.shift == 1, rc.ctrl == 1);
+
+        // ========== 2. 离线或急停检测 ==========
         bool emergency = (rc.left_switch == 2) || emergency_state_;
         if (!connected_ || emergency)
         {
@@ -224,6 +228,8 @@ namespace universal_controller
             unified_output_.vy = 0.0;
             unified_output_.wz = 0.0;
             unified_output_.spin_mode = false;
+            unified_output_.spin_speed = input_processor_.get_spin_speed();
+            unified_output_.chassis_speed_scale = input_processor_.get_speed_scale();
             unified_output_.emergency_stop = emergency;
             unified_output_.friction_on = false;
             unified_output_.fire_trigger = false;
@@ -231,13 +237,6 @@ namespace universal_controller
             return;
         }
         unified_output_.emergency_stop = false;
-
-        // ========== 2. 速度分档 ==========
-        input_processor_.update_keyboard_speed(rc.shift == 1, rc.ctrl == 1);
-
-        // ========== 3. 小陀螺速度调节 ==========
-        // 非急停时持续积分拨轮输入，便于预设小陀螺转速。
-        input_processor_.update_spin_speed(rc.dial, rc.shift == 1, rc.ctrl == 1);
 
         nav_mode_enabled_ = trigger_definition_.loaded ? (nav_topic_state_ || behavior_tree_state_)
                                                        : unified_output_.navigation_enabled;

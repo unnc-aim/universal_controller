@@ -114,12 +114,12 @@ namespace universal_controller
 
         // 状态变量
         bool autoaim_state_{false};
-        bool emergency_state_{false};
+        bool emergency_state_{true};      // 默认急停，必须明确解除
         bool nav_topic_state_{false};
         bool behavior_tree_state_{false};
         bool friction_state_{false};
-        bool feeder_state_{false};      // 拨弹盘开关状态
-        bool burst_mode_{false};        // 连发模式状态
+        bool feeder_state_{false};        // 拨弹盘开关状态
+        bool burst_mode_{false};          // 连发模式状态
 
         // 小陀螺速度增量（由 dial 控制累积）
         double spin_speed_delta_{0.0};

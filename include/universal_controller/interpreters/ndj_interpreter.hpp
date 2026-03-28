@@ -87,7 +87,7 @@ namespace universal_controller
         double last_dial_{0.0};
 
         bool autoaim_state_{false};
-        bool emergency_state_{false};
+        bool emergency_state_{true};
         bool nav_topic_state_{false};
         bool behavior_tree_state_{false};
         bool friction_state_{false};

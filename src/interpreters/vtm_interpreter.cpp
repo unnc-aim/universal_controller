@@ -222,7 +222,27 @@ namespace universal_controller
             execute_trigger_actions(rc);
         }
 
-        // ========== 1. 急停检测 ==========
+        // ========== 1. 速度分档与小陀螺调速（急停状态也允许预设） ==========
+        input_processor_.update_keyboard_speed(rc.key_shift == 1, rc.key_ctrl == 1);
+        input_processor_.update_spin_speed(rc.thumb_wheel, rc.key_shift == 1, rc.key_ctrl == 1);
+
+        // YAML 定义的额外增量
+        if (spin_speed_delta_ > 0.0)
+        {
+            for (int i = 0; i < static_cast<int>(spin_speed_delta_); ++i)
+            {
+                input_processor_.update_spin_speed(-1.0, false, false); // 加速
+            }
+        }
+        else if (spin_speed_delta_ < 0.0)
+        {
+            for (int i = 0; i < static_cast<int>(-spin_speed_delta_); ++i)
+            {
+                input_processor_.update_spin_speed(1.0, false, false); // 减速
+            }
+        }
+
+        // ========== 2. 急停检测 ==========
         bool emergency = emergency_state_;
         if (emergency)
         {
@@ -231,6 +251,8 @@ namespace universal_controller
             unified_output_.vy = 0.0;
             unified_output_.wz = 0.0;
             unified_output_.spin_mode = false;
+            unified_output_.spin_speed = input_processor_.get_spin_speed();
+            unified_output_.chassis_speed_scale = input_processor_.get_speed_scale();
             unified_output_.emergency_stop = true;
             unified_output_.friction_on = false;
             unified_output_.fire_trigger = false;
@@ -239,37 +261,11 @@ namespace universal_controller
         }
         unified_output_.emergency_stop = false;
 
-        // ========== 2. 导航模式 ==========
+        // ========== 3. 导航模式 ==========
         nav_mode_enabled_ = nav_topic_state_ || behavior_tree_state_;
         unified_output_.navigation_enabled = nav_mode_enabled_;
 
-        // ========== 3. 速度分档 ==========
-        input_processor_.update_keyboard_speed(rc.key_shift == 1, rc.key_ctrl == 1);
-
-        // ========== 4. 小陀螺速度调节（滚轮 + 键盘） ==========
-        if (spin_mode_enabled_)
-        {
-            // 滚轮调节
-            input_processor_.update_spin_speed(rc.thumb_wheel, rc.key_shift == 1, rc.key_ctrl == 1);
-
-            // YAML 定义的额外增量
-            if (spin_speed_delta_ > 0.0)
-            {
-                for (int i = 0; i < static_cast<int>(spin_speed_delta_); ++i)
-                {
-                    input_processor_.update_spin_speed(-1.0, false, false); // 加速
-                }
-            }
-            else if (spin_speed_delta_ < 0.0)
-            {
-                for (int i = 0; i < static_cast<int>(-spin_speed_delta_); ++i)
-                {
-                    input_processor_.update_spin_speed(1.0, false, false); // 减速
-                }
-            }
-        }
-
-        // ========== 5. 底盘速度计算 ==========
+        // ========== 4. 底盘速度计算 ==========
         if (nav_mode_enabled_)
         {
             unified_output_.vx = 0.0;
@@ -279,7 +275,7 @@ namespace universal_controller
         else
         {
             auto chassis_vel = input_processor_.compute_chassis_velocity(
-                rc.right_joystick_x, rc.right_joystick_y,
+                -rc.right_joystick_x, rc.right_joystick_y,
                 rc.key_w, rc.key_s, rc.key_a, rc.key_d);
             unified_output_.vx = chassis_vel.vx;
             unified_output_.vy = chassis_vel.vy;
@@ -290,7 +286,7 @@ namespace universal_controller
         unified_output_.spin_speed = input_processor_.get_spin_speed();
         unified_output_.chassis_speed_scale = input_processor_.get_speed_scale();
 
-        // ========== 6. 云台控制（左摇杆 + 鼠标，和 NDJ 对齐） ==========
+        // ========== 5. 云台控制（左摇杆 + 鼠标，和 NDJ 对齐） ==========
         const double mouse_x = static_cast<double>(rc.mouse_x_axis) * input_config_.mouse_sensitivity;
         const double mouse_y = static_cast<double>(rc.mouse_y_axis) * input_config_.mouse_sensitivity;
 
@@ -313,7 +309,7 @@ namespace universal_controller
         unified_output_.pitch_delta = top_down_offset * input_config_.pitch_gain_coeff;
         unified_output_.yaw_delta = left_right_offset * input_config_.yaw_gain_coeff;
 
-        // ========== 7. 发射与模式控制 ==========
+        // ========== 6. 发射与模式控制 ==========
         const bool mouse_autoaim = (rc.mouse_rb == 1);
         const bool mouse_fire = (rc.mouse_lb == 1);
 
