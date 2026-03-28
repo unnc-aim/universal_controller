@@ -43,8 +43,8 @@ namespace universal_controller
         fire_->init(fire_node_.get(), config_loader_);
 
         // 订阅 RC 输入源（VTM / NDJ）
-        std::string topic_vtm = config_loader_.get_string("rc_hub.topic_vtm_input", "/universal_controller/rc_hub/vtm");
-        std::string topic_ndj = config_loader_.get_string("rc_hub.topic_ndj_input", "/universal_controller/rc_hub/ndj");
+        std::string topic_vtm = config_loader_.get_string("rc_hub.topic_vtm_input", "/universal_controller/input/vtm");
+        std::string topic_ndj = config_loader_.get_string("rc_hub.topic_ndj_input", "/universal_controller/input/ndj");
         sub_vtm_ = this->create_subscription<msg::UnifiedInput>(
             topic_vtm, qos_best_effort_,
             std::bind(&Hub::cb_vtm_input, this, std::placeholders::_1));
@@ -99,8 +99,8 @@ namespace universal_controller
         this->declare_parameter("topics.nav_cmd_vel", "/cmd_vel");
 
         // RC 融合参数
-        this->declare_parameter("rc_hub.topic_vtm_input", "/universal_controller/rc_hub/vtm");
-        this->declare_parameter("rc_hub.topic_ndj_input", "/universal_controller/rc_hub/ndj");
+        this->declare_parameter("rc_hub.topic_vtm_input", "/universal_controller/input/vtm");
+        this->declare_parameter("rc_hub.topic_ndj_input", "/universal_controller/input/ndj");
         this->declare_parameter("rc_hub.connection_timeout_s", 0.5);
         this->declare_parameter("rc_hub.priority", std::vector<std::string>{"vtm", "ndj"});
         this->declare_parameter("rc_hub.analog_zero_epsilon", 1e-6);

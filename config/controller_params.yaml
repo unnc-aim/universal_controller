@@ -28,7 +28,7 @@
         wheel_track: 0.2746
         wheel_base: 0.2746
         ecd_zeros: [5989, 21248, 23534, 1128]
-        yaw_center_ecd: 39200
+        yaw_center_ecd: 50800
         topic_drive_write: '/ecat/sn2228292/app1/write'
         topic_drive_read: '/ecat/sn2228292/app1/read'
         topic_steer_write: '/ecat/sn2228292/app2/write'
@@ -43,7 +43,7 @@
         drive_speed_pid: [0.7, 0.0, 0.0, 2000.0, 250.0]
 
       gimbal:
-        pitch_center_ecd: 4600
+        pitch_center_ecd: 6050
         pitch_min_deg: -25.0
         pitch_max_deg: 30.0
         mouse_sensitivity: 1.0
@@ -75,8 +75,8 @@
     rc_interpreter:
       topic_vtm_rc: '/ecat/sn4653115/app5/read'
       topic_ndj_rc: '/ecat/sn4653115/app1/read'
-      topic_vtm_output: '/universal_controller/rc_hub/vtm'
-      topic_ndj_output: '/universal_controller/rc_hub/ndj'
+      topic_vtm_output: '/universal_controller/input/vtm'
+      topic_ndj_output: '/universal_controller/input/ndj'
       connection_timeout_s: 0.5
       priority: ['vtm', 'ndj']  # 当多个同时在线时优先使用哪个 RC 的输入。优先级高者摇杆如果在死区会被视为无输入，优先级低者会生效。
       analog_zero_epsilon: 1.0e-6
@@ -106,8 +106,8 @@
 
     # ========== RC Hub 配置（遥控融合节点） ==========
     rc_hub:
-      topic_vtm_input: '/universal_controller/rc_hub/vtm'
-      topic_ndj_input: '/universal_controller/rc_hub/ndj'
+      topic_vtm_input: '/universal_controller/input/vtm'
+      topic_ndj_input: '/universal_controller/input/ndj'
       topic_unified_output: '/hub/rc_unified_input'
       connection_timeout_s: 0.5
       priority: ['vtm', 'ndj']
