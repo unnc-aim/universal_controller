@@ -169,7 +169,7 @@ namespace universal_controller
     void GimbalController::publish_commands()
     {
         // ========== Pitch 控制 (DJI 电机位置模式) ==========
-        double current_pitch_deg = -imu_pitch_rad_ * (180.0 / M_PI);
+        double current_pitch_deg = imu_pitch_rad_ * (180.0 / M_PI);
         double pitch_error_deg = target_pitch_deg_ - current_pitch_deg;
 
         // 转换为编码器值 (8192 units per 360 degrees)
