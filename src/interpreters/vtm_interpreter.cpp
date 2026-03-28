@@ -311,7 +311,7 @@ namespace universal_controller
                 input_config_.mouse_limit);
 
         unified_output_.pitch_delta = top_down_offset * input_config_.pitch_gain_coeff;
-        unified_output_.yaw_delta = -left_right_offset * input_config_.yaw_gain_coeff;
+        unified_output_.yaw_delta = left_right_offset * input_config_.yaw_gain_coeff;
 
         // ========== 7. 发射与模式控制 ==========
         const bool mouse_autoaim = (rc.mouse_rb == 1);
