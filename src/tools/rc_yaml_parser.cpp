@@ -144,13 +144,26 @@ namespace universal_controller
             return;
         }
 
+        const auto event_actions = [](const YAML::Node &event_node) -> YAML::Node
+        {
+            if (!event_node)
+            {
+                return YAML::Node();
+            }
+            if (event_node["actions"])
+            {
+                return event_node["actions"];
+            }
+            return event_node
+        };
+
         out.loaded = true;
         out.long_press_threshold_s = yaml_double(button_node, "long_press_threshold_s", 0.2);
-        parse_actions(button_node["on_press"], out.on_press);
-        parse_actions(button_node["on_short_press_released"], out.on_short_press_released);
-        parse_actions(button_node["on_long_press_reached"], out.on_long_press_reached);
-        parse_actions(button_node["on_long_press_released"], out.on_long_press_released);
-        parse_actions(button_node["on_release"], out.on_release);
+        parse_actions(event_actions(button_node["on_press"]), out.on_press);
+        parse_actions(event_actions(button_node["on_short_press_released"]), out.on_short_press_released);
+        parse_actions(event_actions(button_node["on_long_press_reached"]), out.on_long_press_reached);
+        parse_actions(event_actions(button_node["on_long_press_released"]), out.on_long_press_released);
+        parse_actions(event_actions(button_node["on_release"]), out.on_release);
     }
 
     // ========== 动作执行工具实现 ==========
