@@ -236,10 +236,8 @@ namespace universal_controller
         input_processor_.update_keyboard_speed(rc.shift == 1, rc.ctrl == 1);
 
         // ========== 3. 小陀螺速度调节 ==========
-        if (spin_mode_enabled_)
-        {
-            input_processor_.update_spin_speed(rc.dial, rc.shift == 1, rc.ctrl == 1);
-        }
+        // 非急停时持续积分拨轮输入，便于预设小陀螺转速。
+        input_processor_.update_spin_speed(rc.dial, rc.shift == 1, rc.ctrl == 1);
 
         nav_mode_enabled_ = trigger_definition_.loaded ? (nav_topic_state_ || behavior_tree_state_)
                                                        : unified_output_.navigation_enabled;
