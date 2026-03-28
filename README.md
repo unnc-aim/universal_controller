@@ -4,8 +4,6 @@
 
 ## 架构概览
 
-`
-
 ```mermaid
 flowchart TB
     subgraph Input Sources
