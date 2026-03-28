@@ -130,6 +130,10 @@ namespace universal_controller
         // 分发指令
         dispatch_commands();
 
+        if (arbitration_.emergency_stop)
+        {
+            return;
+        }
         // 更新各控制器
         chassis_->update(dt);
         gimbal_->update(dt);

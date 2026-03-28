@@ -154,7 +154,7 @@ namespace universal_controller
             {
                 return event_node["actions"];
             }
-            return event_node
+            return event_node;
         };
 
         out.loaded = true;

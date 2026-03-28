@@ -243,6 +243,14 @@ namespace universal_controller
     void FireController::stop_all()
     {
         auto msg = custom_msgs::msg::WriteDJIMotor();
+        msg.motor1_enable = 1;
+        msg.motor1_cmd = 0;
+        msg.motor2_enable = 1;
+        msg.motor2_cmd = 0;
+
+        msg.motor3_enable = 0;
+        msg.motor3_cmd = 0;
+        
         pub_motor_->publish(msg);
 
         feeder_state_ = FeederState::IDLE;
