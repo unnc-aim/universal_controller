@@ -63,14 +63,13 @@ namespace universal_controller
         }
     }
 
-    void parse_dock_points(const YAML::Node &dock_points_node, std::array<ActionSet, 3> &out)
+    void parse_dock_points_three(const YAML::Node &dock_points_node, std::array<ActionSet, 3> &out, const std::array<std::string, 3> &names)
     {
         if (!dock_points_node)
         {
             return;
         }
 
-        const std::array<std::string, 3> names = {"up", "mid", "down"};
         for (size_t i = 0; i < names.size(); ++i)
         {
             const YAML::Node dock_node = dock_points_node[names[i]];
@@ -80,6 +79,12 @@ namespace universal_controller
             }
             parse_actions(dock_node["actions"], out[i]);
         }
+    }
+
+    void parse_dock_points(const YAML::Node &dock_points_node, std::array<ActionSet, 3> &out)
+    {
+        const std::array<std::string, 3> names = {"up", "mid", "down"};
+        parse_dock_points_three(dock_points_node, out, names);
     }
 
     void parse_dock_points_two(const YAML::Node &dock_points_node, std::array<ActionSet, 2> &out)

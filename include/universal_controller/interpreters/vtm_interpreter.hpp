@@ -91,7 +91,7 @@ namespace universal_controller
         VTMTriggerDefinition trigger_definition_;
 
         // 上次状态（用于检测边沿）
-        uint8_t last_gear_switching_{0};
+        uint8_t last_gear_switching_{255};
         bool last_pause_button_{false};
         bool last_left_custom_button_{false};
         bool last_right_custom_button_{false};

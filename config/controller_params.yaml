@@ -73,7 +73,7 @@
 
     # ========== RC Interpreter 配置（并入同一参数树） ==========
     rc_interpreter:
-      topic_vtm_rc: '/ecat/sn4653115/app5/read'
+      topic_vtm_rc: '/ecat/sn4653115/vt13/read'
       topic_ndj_rc: '/ecat/sn4653115/app1/read'
       topic_vtm_output: '/universal_controller/input/vtm'
       topic_ndj_output: '/universal_controller/input/ndj'

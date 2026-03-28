@@ -145,7 +145,8 @@ namespace universal_controller
             const auto gear = def["gear_switching"];
             if (gear)
             {
-                parse_dock_points(gear["dock_points"], trigger_definition_.gear_dock_points);
+                const std::array<std::string, 3> dock_names = {"left", "mid", "right"};
+                parse_dock_points_three(gear["dock_points"], trigger_definition_.gear_dock_points, dock_names);
 
                 // 解析四档切换：left_to_mid, mid_to_left, mid_to_right, right_to_mid
                 const auto trans = gear["transitions"];
@@ -311,22 +312,28 @@ namespace universal_controller
     void VTMInterpreter::execute_trigger_actions(const custom_msgs::msg::ReadVT13RemoteControl &rc)
     {
         // ========== gear_switching 三档拨杆 ==========
-        // 值: 左=1, 中=2, 右=3
+        // 值: 左=0, 中=1, 右=2
         const int gear = static_cast<int>(rc.gear_switching);
-        if (gear >= 1 && gear <= 3)
+        
+        // --- 增加对摇杆与拨杆的 DEBUG log ---
+        RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
+            "execute_trigger_actions running. gear: %d, pause: %d, left_btn: %d, right_btn: %d, trigger: %d", 
+            gear, rc.pause_button, rc.left_custom_button, rc.right_custom_button, rc.trigger);
+
+        if (gear >= 0 && gear <= 2)
         {
-            execute_action_set(trigger_definition_.gear_dock_points[static_cast<size_t>(gear - 1)]);
+            execute_action_set(trigger_definition_.gear_dock_points[static_cast<size_t>(gear)]);
         }
 
         // 检测切换瞬间，执行 transitions
         // gear_transitions: [left_to_mid(0), mid_to_left(1), mid_to_right(2), right_to_mid(3)]
-        if (last_gear_switching_ != 0 && gear != 0 && last_gear_switching_ != gear)
+        if (last_gear_switching_ != 255 && gear != 255 && last_gear_switching_ != gear)
         {
             int trans_idx = -1;
-            if (last_gear_switching_ == 1 && gear == 2)      trans_idx = 0;  // left_to_mid
-            else if (last_gear_switching_ == 2 && gear == 1) trans_idx = 1;  // mid_to_left
-            else if (last_gear_switching_ == 2 && gear == 3) trans_idx = 2;  // mid_to_right
-            else if (last_gear_switching_ == 3 && gear == 2) trans_idx = 3;  // right_to_mid
+            if (last_gear_switching_ == 0 && gear == 1)      trans_idx = 0;  // left_to_mid
+            else if (last_gear_switching_ == 1 && gear == 0) trans_idx = 1;  // mid_to_left
+            else if (last_gear_switching_ == 1 && gear == 2) trans_idx = 2;  // mid_to_right
+            else if (last_gear_switching_ == 2 && gear == 1) trans_idx = 3;  // right_to_mid
 
             if (trans_idx >= 0)
             {
@@ -379,6 +386,7 @@ namespace universal_controller
     {
         if (!def.loaded)
         {
+            RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Button not loaded, ignoring.");
             return;
         }
 
@@ -387,6 +395,7 @@ namespace universal_controller
         // 按下边沿
         if (current_pressed && !last_pressed)
         {
+            RCLCPP_INFO(this->get_logger(), "Button pressed edge detected.");
             press_start_time = now;
             long_press_active = false;
             execute_action_set(def.on_press);
@@ -428,6 +437,7 @@ namespace universal_controller
     {
         if (!trigger_definition_.trigger.loaded)
         {
+            RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Trigger not loaded, ignoring.");
             return;
         }
 
@@ -437,6 +447,7 @@ namespace universal_controller
         // 按下边沿
         if (trigger_pressed && !trigger_currently_pressed_)
         {
+            RCLCPP_INFO(this->get_logger(), "Trigger pressed edge detected.");
             trigger_press_start_time_ = now;
             trigger_long_press_active_ = false;
             execute_action_set(trigger_definition_.trigger.on_press);

@@ -64,6 +64,14 @@ namespace universal_controller
     /**
      * @brief 解析停靠点（三档）
      * @param dock_points_node YAML 停靠点节点
+     * @param out 输出停靠点数组
+     * @param names 停靠点名称数组
+     */
+    void parse_dock_points_three(const YAML::Node &dock_points_node, std::array<ActionSet, 3> &out, const std::array<std::string, 3> &names);
+
+    /**
+     * @brief 解析停靠点（三档）缺省 ["up", "mid", "down"]
+     * @param dock_points_node YAML 停靠点节点
      * @param out 输出停靠点数组 [up, mid, down]
      */
     void parse_dock_points(const YAML::Node &dock_points_node, std::array<ActionSet, 3> &out);
