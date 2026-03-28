@@ -290,13 +290,28 @@ namespace universal_controller
         unified_output_.spin_speed = input_processor_.get_spin_speed();
         unified_output_.chassis_speed_scale = input_processor_.get_speed_scale();
 
-        // ========== 6. 鼠标云台控制 ==========
-        auto gimbal_delta = input_processor_.compute_gimbal_delta(
-            static_cast<double>(rc.mouse_x_axis),
-            static_cast<double>(rc.mouse_y_axis));
+        // ========== 6. 云台控制（左摇杆 + 鼠标，和 NDJ 对齐） ==========
+        const double mouse_x = static_cast<double>(rc.mouse_x_axis) * input_config_.mouse_sensitivity;
+        const double mouse_y = static_cast<double>(rc.mouse_y_axis) * input_config_.mouse_sensitivity;
 
-        unified_output_.pitch_delta = gimbal_delta.pitch_delta;
-        unified_output_.yaw_delta = gimbal_delta.yaw_delta;
+        // 左右偏移 = 左摇杆X + 鼠标X
+        const double left_right_offset =
+            static_cast<double>(rc.left_joystick_x) * 100.0 +
+            InputProcessor::clamp(
+                mouse_x * input_config_.mouse_yaw_gain,
+                -input_config_.mouse_limit,
+                input_config_.mouse_limit);
+
+        // 上下偏移 = 左摇杆Y + 鼠标Y
+        const double top_down_offset =
+            static_cast<double>(rc.left_joystick_y) * 100.0 +
+            InputProcessor::clamp(
+                mouse_y * input_config_.mouse_pitch_gain,
+                -input_config_.mouse_limit,
+                input_config_.mouse_limit);
+
+        unified_output_.pitch_delta = top_down_offset * input_config_.pitch_gain_coeff;
+        unified_output_.yaw_delta = -left_right_offset * input_config_.yaw_gain_coeff;
 
         // ========== 7. 发射与模式控制 ==========
         const bool mouse_autoaim = (rc.mouse_rb == 1);
