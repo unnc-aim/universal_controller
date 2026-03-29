@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
 namespace universal_controller {
 
@@ -21,28 +21,28 @@ namespace universal_controller {
  */
 struct InputProcessorConfig {
     // 摇杆参数
-    double joystick_max_output{8000.0};      // 摇杆最大输出速度
-    double joystick_deadzone{0.05};          // 摇杆死区
+    double joystick_max_output{8000.0}; // 摇杆最大输出速度
+    double joystick_deadzone{0.05};     // 摇杆死区
 
     // 键盘参数
-    double keyboard_speed_default{3000.0};   // 键盘默认速度
-    double keyboard_speed_min{0.0};          // 键盘最小速度
-    double keyboard_speed_max{8000.0};       // 键盘最大速度
-    double keyboard_speed_step{6.0};         // 每次速度调整步长
+    double keyboard_speed_default{3000.0}; // 键盘默认速度
+    double keyboard_speed_min{0.0};        // 键盘最小速度
+    double keyboard_speed_max{8000.0};     // 键盘最大速度
+    double keyboard_speed_step{6.0};       // 每次速度调整步长
 
     // 小陀螺参数
-    double spin_speed_default{3000.0};       // 小陀螺默认速度
-    double spin_speed_min{800.0};            // 小陀螺最小速度
-    double spin_speed_max{6500.0};           // 小陀螺最大速度
-    double spin_dial_gain{6.0};              // 拨轮调节增益
-    double spin_key_gain{2.4};               // 键盘调节增益
-    double spin_dial_deadzone{0.05};         // 拨轮死区
+    double spin_speed_default{3000.0}; // 小陀螺默认速度
+    double spin_speed_min{800.0};      // 小陀螺最小速度
+    double spin_speed_max{6500.0};     // 小陀螺最大速度
+    double spin_dial_gain{6.0};        // 拨轮调节增益
+    double spin_key_gain{2.4};         // 键盘调节增益
+    double spin_dial_deadzone{0.05};   // 拨轮死区
 
     // 鼠标参数
-    double mouse_sensitivity{1.0};           // 鼠标灵敏度
-    double mouse_yaw_gain{0.75};             // Yaw 增益
-    double mouse_pitch_gain{1.0};            // Pitch 增益
-    double mouse_limit{100.0};               // 鼠标偏移限幅
+    double mouse_sensitivity{1.0}; // 鼠标灵敏度
+    double mouse_yaw_gain{0.75};   // Yaw 增益
+    double mouse_pitch_gain{1.0};  // Pitch 增益
+    double mouse_limit{100.0};     // 鼠标偏移限幅
     double pitch_gain_coeff{0.00005 * (180.0 / M_PI)};
     double yaw_gain_coeff{10.0 * M_PI * 0.001 * 0.0025};
 
@@ -55,28 +55,28 @@ struct InputProcessorConfig {
  * @brief 底盘速度输出
  */
 struct ChassisVelocity {
-    double vx{0.0};      // X 方向速度（前进）
-    double vy{0.0};      // Y 方向速度（横移）
-    double wz{0.0};      // 旋转角速度
-    bool active{false};  // 是否有有效输入
+    double vx{0.0};     // X 方向速度（前进）
+    double vy{0.0};     // Y 方向速度（横移）
+    double wz{0.0};     // 旋转角速度
+    bool active{false}; // 是否有有效输入
 };
 
 /**
  * @brief 云台增量输出
  */
 struct GimbalDelta {
-    double pitch_delta{0.0};   // Pitch 增量（度）
-    double yaw_delta{0.0};     // Yaw 增量（弧度）
-    double target_pitch{0.0};  // 目标 Pitch（度）
-    double target_yaw{0.0};    // 目标 Yaw（弧度）
+    double pitch_delta{0.0};  // Pitch 增量（度）
+    double yaw_delta{0.0};    // Yaw 增量（弧度）
+    double target_pitch{0.0}; // 目标 Pitch（度）
+    double target_yaw{0.0};   // 目标 Yaw（弧度）
 };
 
 /**
  * @brief 输入处理工具类
  */
 class InputProcessor {
-public:
-    explicit InputProcessor(const InputProcessorConfig& config = InputProcessorConfig{})
+  public:
+    explicit InputProcessor(const InputProcessorConfig &config = InputProcessorConfig{})
         : config_(config),
           current_spd_mode_(config.keyboard_speed_default),
           spin_spd_(config.spin_speed_default),
@@ -109,7 +109,6 @@ public:
         double joystick_x, double joystick_y,
         uint8_t key_forward, uint8_t key_backward,
         uint8_t key_left, uint8_t key_right) const {
-
         // 摇杆处理
         double vx_joystick = process_joystick(joystick_y);
         double vy_joystick = process_joystick(joystick_x);
@@ -251,14 +250,14 @@ public:
     /**
      * @brief 更新配置
      */
-    void update_config(const InputProcessorConfig& config) {
+    void update_config(const InputProcessorConfig &config) {
         config_ = config;
     }
 
     /**
      * @brief 获取配置
      */
-    const InputProcessorConfig& get_config() const {
+    const InputProcessorConfig &get_config() const {
         return config_;
     }
 
@@ -269,13 +268,15 @@ public:
         return std::max(min_val, std::min(max_val, value));
     }
 
-private:
+  private:
     /**
      * @brief 归一化角度到 [-PI, PI]
      */
-    static void normalize_angle(double& angle_rad) {
-        while (angle_rad > M_PI) angle_rad -= 2.0 * M_PI;
-        while (angle_rad < -M_PI) angle_rad += 2.0 * M_PI;
+    static void normalize_angle(double &angle_rad) {
+        while (angle_rad > M_PI)
+            angle_rad -= 2.0 * M_PI;
+        while (angle_rad < -M_PI)
+            angle_rad += 2.0 * M_PI;
     }
 
     InputProcessorConfig config_;
@@ -285,4 +286,4 @@ private:
     double target_yaw_rad_;
 };
 
-}  // namespace universal_controller
+} // namespace universal_controller
