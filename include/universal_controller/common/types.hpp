@@ -311,4 +311,37 @@ namespace universal_controller
         return static_cast<int16_t>(diff);
     }
 
+    /**
+     * @brief 统一键鼠输入（由各 interpreter 的 mapper 填充）
+     */
+    struct KeyboardMouseInput
+    {
+        // 键盘 16 键
+        bool key_w{false}, key_s{false}, key_a{false}, key_d{false};
+        bool key_q{false}, key_e{false}, key_r{false}, key_f{false};
+        bool key_g{false}, key_z{false}, key_x{false}, key_c{false};
+        bool key_v{false}, key_b{false};
+        bool key_shift{false}, key_ctrl{false};
+
+        // 鼠标
+        double mouse_x{0.0}, mouse_y{0.0};
+        double mouse_wheel{0.0};
+        bool mouse_left{false}, mouse_right{false}, mouse_middle{false};
+    };
+
+    /**
+     * @brief 键鼠解析输出
+     */
+    struct KeyboardMouseOutput
+    {
+        double keyboard_speed{0.0};  ///< 当前键盘速度
+        double speed_scale{0.0};     ///< 速度比例 (0-1)
+        double key_vx{0.0};          ///< 键盘前后方向速度分量
+        double key_vy{0.0};          ///< 键盘左右方向速度分量
+        double pitch_delta{0.0};     ///< 鼠标 Pitch 增量（度）
+        double yaw_delta{0.0};       ///< 鼠标 Yaw 增量（弧度）
+        bool mouse_autoaim{false};   ///< 鼠标右键自瞄
+        bool mouse_fire{false};      ///< 鼠标左键发射
+    };
+
 } // namespace universal_controller

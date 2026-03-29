@@ -21,6 +21,7 @@
 #include "custom_msgs/msg/read_djirc.hpp"
 #include "universal_controller/msg/unified_input.hpp"
 #include "universal_controller/tools/input_processor.hpp"
+#include "universal_controller/tools/keyboard_mouse_parser.hpp"
 #include "universal_controller/tools/rc_action_types.hpp"
 
 #include <array>
@@ -49,6 +50,9 @@ namespace universal_controller
         static int switch_to_dock(uint8_t switch_value);
         static int transition_index(int from_switch, int to_switch);
 
+        // 键鼠映射
+        KeyboardMouseInput map_keyboard_mouse(const custom_msgs::msg::ReadDJIRC &rc);
+
         // 订阅
         rclcpp::Subscription<custom_msgs::msg::ReadDJIRC>::SharedPtr sub_rc_;
 
@@ -70,6 +74,9 @@ namespace universal_controller
         // 输入处理器
         InputProcessor input_processor_;
         InputProcessorConfig input_config_;
+
+        // 键鼠解析器
+        KeyboardMouseParser km_parser_;
 
         // 模式状态
         bool spin_mode_enabled_{false};

@@ -14,7 +14,8 @@ namespace universal_controller
 
     NDJInterpreter::NDJInterpreter(const rclcpp::NodeOptions &options)
         : Node("ndj_interpreter", options),
-          input_processor_()
+          input_processor_(),
+          km_parser_()
     {
         declare_parameters();
         load_parameters();
@@ -109,6 +110,9 @@ namespace universal_controller
         // 更新输入处理器
         input_processor_.update_config(input_config_);
 
+        // 更新键鼠解析器
+        km_parser_.update_config(input_config_);
+
         if (ndj_definition_file_.empty())
         {
             try
@@ -182,6 +186,26 @@ namespace universal_controller
         process_input();
     }
 
+    KeyboardMouseInput NDJInterpreter::map_keyboard_mouse(
+        const custom_msgs::msg::ReadDJIRC &rc)
+    {
+        KeyboardMouseInput kmi;
+        kmi.key_w = rc.w;  kmi.key_s = rc.s;
+        kmi.key_a = rc.a;  kmi.key_d = rc.d;
+        kmi.key_q = rc.q;  kmi.key_e = rc.e;
+        kmi.key_r = rc.r;  kmi.key_f = rc.f;
+        kmi.key_g = rc.g;  kmi.key_z = rc.z;
+        kmi.key_x = rc.x;  kmi.key_c = rc.c;
+        kmi.key_v = rc.v;  kmi.key_b = rc.b;
+        kmi.key_shift = rc.shift == 1;
+        kmi.key_ctrl  = rc.ctrl == 1;
+        kmi.mouse_x = static_cast<double>(rc.mouse_x);
+        kmi.mouse_y = static_cast<double>(rc.mouse_y);
+        kmi.mouse_left  = rc.mouse_left_clicked == 1;
+        kmi.mouse_right = rc.mouse_right_clicked == 1;
+        return kmi;
+    }
+
     void NDJInterpreter::process_input()
     {
         // 检查连接超时
@@ -215,11 +239,14 @@ namespace universal_controller
             execute_trigger_actions(rc);
         }
 
-        // ========== 1. 速度分档与小陀螺调速（急停状态也允许预设） ==========
-        input_processor_.update_keyboard_speed(rc.shift == 1, rc.ctrl == 1);
-        input_processor_.update_spin_speed(rc.dial, rc.shift == 1, rc.ctrl == 1);
+        // ========== 键鼠解析 ==========
+        auto kmi = map_keyboard_mouse(rc);
+        auto km_out = km_parser_.parse(kmi);
 
-        // ========== 2. 离线或急停检测 ==========
+        // ========== 1. 小陀螺调速（拨轮 RC + 键盘） ==========
+        km_parser_.update_spin_speed(rc.dial, kmi.key_shift, kmi.key_ctrl);
+
+        // ========== 2. 急停检测 ==========
         bool emergency = (rc.left_switch == 2) || emergency_state_;
         if (!connected_ || emergency)
         {
@@ -228,8 +255,8 @@ namespace universal_controller
             unified_output_.vy = 0.0;
             unified_output_.wz = 0.0;
             unified_output_.spin_mode = false;
-            unified_output_.spin_speed = input_processor_.get_spin_speed();
-            unified_output_.chassis_speed_scale = input_processor_.get_speed_scale();
+            unified_output_.spin_speed = km_parser_.get_spin_speed();
+            unified_output_.chassis_speed_scale = km_parser_.get_speed_scale();
             unified_output_.emergency_stop = emergency;
             unified_output_.friction_on = false;
             unified_output_.fire_trigger = false;
@@ -238,11 +265,12 @@ namespace universal_controller
         }
         unified_output_.emergency_stop = false;
 
+        // ========== 3. 导航模式 ==========
         nav_mode_enabled_ = trigger_definition_.loaded ? (nav_topic_state_ || behavior_tree_state_)
                                                        : unified_output_.navigation_enabled;
         unified_output_.navigation_enabled = nav_mode_enabled_;
 
-        // ========== 4. 底盘速度计算 ==========
+        // ========== 4. 底盘速度 ==========
         if (nav_mode_enabled_)
         {
             unified_output_.vx = 0.0;
@@ -251,56 +279,40 @@ namespace universal_controller
         }
         else
         {
-            auto chassis_vel = input_processor_.compute_chassis_velocity(
-                rc.right_x, rc.right_y,
-                rc.w, rc.s, rc.a, rc.d);
-            unified_output_.vx = chassis_vel.vx;
-            unified_output_.vy = chassis_vel.vy;
-            unified_output_.wz = spin_mode_enabled_ ? input_processor_.get_spin_speed() : 0.0;
+            // 摇杆（RC 硬件）+ 键盘方向（parser 输出）
+            double joystick_vx = input_processor_.process_joystick(rc.right_y);
+            double joystick_vy = input_processor_.process_joystick(rc.right_x);
+            unified_output_.vx = joystick_vx + km_out.key_vx;
+            unified_output_.vy = joystick_vy + km_out.key_vy;
+            unified_output_.wz = spin_mode_enabled_ ? km_parser_.get_spin_speed() : 0.0;
         }
 
         unified_output_.spin_mode = spin_mode_enabled_;
-        unified_output_.spin_speed = input_processor_.get_spin_speed();
-        unified_output_.chassis_speed_scale = input_processor_.get_speed_scale();
+        unified_output_.spin_speed = km_parser_.get_spin_speed();
+        unified_output_.chassis_speed_scale = km_parser_.get_speed_scale();
 
-        // ========== 5. 云台控制（对齐 sentry_controller 逻辑） ==========
-        const double mouse_x = static_cast<double>(rc.mouse_x) * input_config_.mouse_sensitivity;
-        const double mouse_y = static_cast<double>(rc.mouse_y) * input_config_.mouse_sensitivity;
-
-        const double left_right_offset =
-            static_cast<double>(rc.left_x) * 100.0 +
-            InputProcessor::clamp(
-                mouse_x * input_config_.mouse_yaw_gain,
-                -input_config_.mouse_limit,
-                input_config_.mouse_limit);
-
-        const double top_down_offset =
-            static_cast<double>(rc.left_y) * 100.0 +
-            InputProcessor::clamp(
-                mouse_y * input_config_.mouse_pitch_gain,
-                -input_config_.mouse_limit,
-                input_config_.mouse_limit);
-
-        unified_output_.pitch_delta = top_down_offset * input_config_.pitch_gain_coeff;
-        unified_output_.yaw_delta = -left_right_offset * input_config_.yaw_gain_coeff;
+        // ========== 5. 云台控制（左摇杆 RC + 鼠标 parser 输出） ==========
+        double joystick_pitch = static_cast<double>(rc.left_y) * 100.0 *
+                               input_config_.pitch_gain_coeff;
+        double joystick_yaw = static_cast<double>(rc.left_x) * 100.0 *
+                             input_config_.yaw_gain_coeff;
+        unified_output_.pitch_delta = joystick_pitch + km_out.pitch_delta;
+        unified_output_.yaw_delta = -(joystick_yaw + km_out.yaw_delta);  // NDJ yaw 取反
 
         // ========== 6. 发射与模式控制 ==========
         if (trigger_definition_.loaded)
         {
-            const bool mouse_autoaim = (rc.mouse_right_clicked == 1);
-            const bool mouse_fire = (rc.mouse_left_clicked == 1);
-
-            unified_output_.autoaim_enabled = autoaim_state_ || mouse_autoaim;
+            unified_output_.autoaim_enabled = autoaim_state_ || km_out.mouse_autoaim;
             unified_output_.burst_mode = burst_mode_;
-            unified_output_.fire_trigger = feeder_state_ || burst_mode_ || mouse_fire;
+            unified_output_.fire_trigger = feeder_state_ || burst_mode_ || km_out.mouse_fire;
             unified_output_.friction_on = friction_state_;
             unified_output_.friction_speed = friction_state_ ? 6500.0 : 0.0;
         }
         else
         {
-            unified_output_.autoaim_enabled = rc.mouse_right_clicked == 1;
-            unified_output_.fire_trigger = rc.mouse_left_clicked == 1;
-            unified_output_.burst_mode = rc.mouse_left_clicked == 1;
+            unified_output_.autoaim_enabled = km_out.mouse_autoaim;
+            unified_output_.fire_trigger = km_out.mouse_fire;
+            unified_output_.burst_mode = km_out.mouse_fire;
             unified_output_.friction_on = true;
             unified_output_.friction_speed = 6500.0;
         }
@@ -371,11 +383,11 @@ namespace universal_controller
         // 小陀螺速度控制
         if (actions.spin_control.accelerate)
         {
-            input_processor_.update_spin_speed(-1.0, false, false);
+            km_parser_.update_spin_speed(-1.0, false, false);
         }
         if (actions.spin_control.decelerate)
         {
-            input_processor_.update_spin_speed(1.0, false, false);
+            km_parser_.update_spin_speed(1.0, false, false);
         }
     }
 

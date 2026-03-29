@@ -22,6 +22,7 @@
 #include "custom_msgs/msg/read_vt13_remote_control.hpp"
 #include "universal_controller/msg/unified_input.hpp"
 #include "universal_controller/tools/input_processor.hpp"
+#include "universal_controller/tools/keyboard_mouse_parser.hpp"
 #include "universal_controller/tools/rc_action_types.hpp"
 
 #include <array>
@@ -56,6 +57,9 @@ namespace universal_controller
                                       const ButtonDefinition &def);
         void handle_trigger_button(const custom_msgs::msg::ReadVT13RemoteControl &rc);
 
+        // 键鼠映射
+        KeyboardMouseInput map_keyboard_mouse(const custom_msgs::msg::ReadVT13RemoteControl &rc);
+
         // 订阅
         rclcpp::Subscription<custom_msgs::msg::ReadVT13RemoteControl>::SharedPtr sub_rc_;
 
@@ -77,6 +81,9 @@ namespace universal_controller
         // 输入处理器
         InputProcessor input_processor_;
         InputProcessorConfig input_config_;
+
+        // 键鼠解析器
+        KeyboardMouseParser km_parser_;
 
         // 模式状态
         bool spin_mode_enabled_{false};
