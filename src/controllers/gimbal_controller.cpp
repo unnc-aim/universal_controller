@@ -50,11 +50,6 @@ namespace universal_controller
             config_.topic_yaw_read, qos_best_effort_,
             std::bind(&GimbalController::cb_yaw_feedback, this, std::placeholders::_1));
 
-        // 订阅自瞄指令
-        sub_autoaim_ = node->create_subscription<sp_msgs::msg::AutoAimCommandMsg>(
-            config_.topic_autoaim_cmd, qos_best_effort_,
-            std::bind(&GimbalController::cb_autoaim, this, std::placeholders::_1));
-
         // 发布 Pitch 指令
         pub_pitch_ = node->create_publisher<custom_msgs::msg::WriteDJIMotor>(
             config_.topic_pitch_write, qos_best_effort_);
@@ -114,32 +109,18 @@ namespace universal_controller
         yaw_motor_pos_ = (msg->encoder / 65535.0) * 2.0 * M_PI;
     }
 
-    void GimbalController::cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg)
-    {
-        autoaim_control_ = msg->control;
-        autoaim_yaw_ = msg->yaw;
-        autoaim_pitch_ = msg->pitch;
-        autoaim_last_time_ = node_->now().seconds();
-    }
-
     void GimbalController::compute_pitch_control()
     {
-        double now = node_->now().seconds();
-        bool autoaim_fresh = (now - autoaim_last_time_) < config_.autoaim_timeout_s;
-
-        // 判断是否使用自瞄
-        bool use_autoaim = command_.autoaim_enabled && autoaim_control_ && autoaim_fresh;
-
-        if (use_autoaim)
+        if (command_.absolute)
         {
-            target_pitch_deg_ = -autoaim_pitch_ * (180.0 / M_PI);
+            // 绝对目标（自瞄/Action）
+            target_pitch_deg_ = command_.pitch_deg;
         }
-        else if (!command_.from_action)
+        else
         {
             // 遥控器增量控制
             target_pitch_deg_ += command_.pitch_deg;
         }
-        // from_action 时直接使用 command_.pitch_deg 作为目标
 
         // 限幅
         target_pitch_deg_ = clamp(target_pitch_deg_, config_.pitch_min_deg, config_.pitch_max_deg);
@@ -147,21 +128,15 @@ namespace universal_controller
 
     void GimbalController::compute_yaw_control()
     {
-        double now = node_->now().seconds();
-        bool autoaim_fresh = (now - autoaim_last_time_) < config_.autoaim_timeout_s;
-
-        bool use_autoaim = command_.autoaim_enabled && autoaim_control_ && autoaim_fresh;
-
-        if (use_autoaim)
+        if (command_.absolute)
         {
-            // 自瞄模式
-            target_yaw_rad_ = std::atan2(std::sin(autoaim_yaw_), std::cos(autoaim_yaw_));
+            // 绝对目标（自瞄/Action）
+            target_yaw_rad_ = std::atan2(std::sin(command_.yaw_rad), std::cos(command_.yaw_rad));
         }
-        else if (!command_.from_action)
+        else
         {
             // 遥控器增量控制
             target_yaw_rad_ += command_.yaw_rad;
-            // 归一化到 [-PI, PI]
             target_yaw_rad_ = std::atan2(std::sin(target_yaw_rad_), std::cos(target_yaw_rad_));
         }
     }

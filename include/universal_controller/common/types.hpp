@@ -157,13 +157,12 @@ namespace universal_controller
     {
         double pitch_deg{0.0};       ///< 目标 Pitch 角度（度）
         double yaw_rad{0.0};         ///< 目标 Yaw 角度（弧度）
-        bool autoaim_enabled{false}; ///< 自瞄使能
         bool from_action{false};     ///< 是否来自 Action Server
         bool absolute{true};         ///< true=绝对角度, false=增量
 
         GimbalCommand() = default;
-        GimbalCommand(double pitch, double yaw, bool autoaim = false, bool action = false, bool abs = true)
-            : pitch_deg(pitch), yaw_rad(yaw), autoaim_enabled(autoaim), from_action(action), absolute(abs) {}
+        GimbalCommand(double pitch, double yaw, bool action = false, bool abs = true)
+            : pitch_deg(pitch), yaw_rad(yaw), from_action(action), absolute(abs) {}
     };
 
     /**

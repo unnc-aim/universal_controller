@@ -46,10 +46,6 @@ namespace universal_controller
         pub_motor_ = node->create_publisher<custom_msgs::msg::WriteDJIMotor>(
             config_.topic_fire_write, qos_best_effort_);
 
-        // 发布自瞄使能
-        pub_autoaim_enable_ = node->create_publisher<std_msgs::msg::Bool>(
-            "/universal_controller/autoaim_enable", qos_best_effort_);
-
         friction_speed_target_ = config_.friction_speed_default;
 
         set_initialized(true);
@@ -233,11 +229,6 @@ namespace universal_controller
         msg.motor3_cmd = static_cast<int16_t>(motor3_torque);
 
         pub_motor_->publish(msg);
-
-        // 发布自瞄使能
-        auto aim_msg = std_msgs::msg::Bool();
-        aim_msg.data = command_.friction_on;
-        pub_autoaim_enable_->publish(aim_msg);
     }
 
     void FireController::stop_all()

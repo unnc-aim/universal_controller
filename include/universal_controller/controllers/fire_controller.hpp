@@ -20,8 +20,6 @@
 
 #include "custom_msgs/msg/write_dji_motor.hpp"
 #include "custom_msgs/msg/read_dji_motor.hpp"
-#include "std_msgs/msg/bool.hpp"
-#include "std_msgs/msg/float32_multi_array.hpp"
 
 namespace universal_controller
 {
@@ -90,8 +88,6 @@ namespace universal_controller
         // ROS2 接口
         rclcpp::Subscription<custom_msgs::msg::ReadDJIMotor>::SharedPtr sub_motor_;
         rclcpp::Publisher<custom_msgs::msg::WriteDJIMotor>::SharedPtr pub_motor_;
-        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pub_autoaim_enable_;
-
         rclcpp::QoS qos_best_effort_{rclcpp::QoS(1).best_effort()};
     };
 

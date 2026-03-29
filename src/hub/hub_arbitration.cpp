@@ -136,7 +136,6 @@ namespace universal_controller
             GimbalCommand cmd;
             cmd.pitch_deg = unified_input_->pitch_delta;
             cmd.yaw_rad = unified_input_->yaw_delta;
-            cmd.autoaim_enabled = false;
             cmd.absolute = false;
             gimbal_->set_command(cmd);
             break;
@@ -146,7 +145,6 @@ namespace universal_controller
             GimbalCommand cmd;
             cmd.yaw_rad = autoaim_cmd_->yaw;
             cmd.pitch_deg = -autoaim_cmd_->pitch * (180.0 / M_PI);
-            cmd.autoaim_enabled = true;
             cmd.absolute = true;
             gimbal_->set_command(cmd);
             break;
