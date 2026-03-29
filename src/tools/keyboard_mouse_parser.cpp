@@ -53,12 +53,19 @@ namespace universal_controller
             my * config_.mouse_pitch_gain,
             -config_.mouse_limit, config_.mouse_limit);
 
-        out.pitch_delta = mouse_pitch_offset * config_.pitch_gain_coeff;
+        out.pitch_delta = mouse_pitch_offset * config_.pitch_gain_coeff
+                          * (M_PI / 180.0);  // pitch 原始输出为度，转弧度
         out.yaw_delta = mouse_yaw_offset * config_.yaw_gain_coeff;
 
-        // ========== 4. 鼠标按键 ==========
+        // ========== 4. 小陀螺 ==========
+        out.spin_mode = spin_mode_;
+        out.spin_speed = spin_spd_;
+
+        // ========== 5. 鼠标按键 + 滚轮 ==========
         out.mouse_autoaim = input.mouse_right;
         out.mouse_fire = input.mouse_left;
+        out.mouse_middle = input.mouse_middle;
+        out.mouse_wheel = input.mouse_wheel;
 
         return out;
     }
@@ -83,6 +90,16 @@ namespace universal_controller
     double KeyboardMouseParser::get_spin_speed() const
     {
         return spin_spd_;
+    }
+
+    void KeyboardMouseParser::set_spin_mode(bool enabled)
+    {
+        spin_mode_ = enabled;
+    }
+
+    bool KeyboardMouseParser::get_spin_mode() const
+    {
+        return spin_mode_;
     }
 
     double KeyboardMouseParser::get_speed_scale() const

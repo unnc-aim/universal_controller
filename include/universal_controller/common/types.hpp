@@ -334,14 +334,29 @@ namespace universal_controller
      */
     struct KeyboardMouseOutput
     {
-        double keyboard_speed{0.0};  ///< 当前键盘速度
-        double speed_scale{0.0};     ///< 速度比例 (0-1)
-        double key_vx{0.0};          ///< 键盘前后方向速度分量
-        double key_vy{0.0};          ///< 键盘左右方向速度分量
-        double pitch_delta{0.0};     ///< 鼠标 Pitch 增量（度）
-        double yaw_delta{0.0};       ///< 鼠标 Yaw 增量（弧度）
-        bool mouse_autoaim{false};   ///< 鼠标右键自瞄
-        bool mouse_fire{false};      ///< 鼠标左键发射
+        // ========== 速度分档 ==========
+        double keyboard_speed{0.0};      ///< 当前键盘速度
+        double speed_scale{0.0};         ///< 速度比例 (0-1)
+
+        // ========== 键盘方向（WASD） ==========
+        double key_vx{0.0};              ///< 键盘前后方向速度分量
+        double key_vy{0.0};              ///< 键盘左右方向速度分量
+
+        // ========== 鼠标云台增量（统一弧度） ==========
+        double pitch_delta{0.0};         ///< 鼠标 Pitch 增量（弧度）
+        double yaw_delta{0.0};           ///< 鼠标 Yaw 增量（弧度）
+
+        // ========== 小陀螺 ==========
+        bool spin_mode{false};           ///< 小陀螺模式开关
+        double spin_speed{0.0};          ///< 当前小陀螺速度
+
+        // ========== 鼠标按键 ==========
+        bool mouse_autoaim{false};       ///< 鼠标右键自瞄
+        bool mouse_fire{false};          ///< 鼠标左键发射
+        bool mouse_middle{false};        ///< 鼠标中键
+
+        // ========== 鼠标滚轮 ==========
+        double mouse_wheel{0.0};         ///< 鼠标滚轮值
     };
 
 } // namespace universal_controller

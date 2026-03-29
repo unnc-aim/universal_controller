@@ -250,6 +250,7 @@ namespace universal_controller
 
         // ========== 键鼠解析 ==========
         auto kmi = map_keyboard_mouse(rc);
+        km_parser_.set_spin_mode(spin_mode_enabled_);
         auto km_out = km_parser_.parse(kmi);
 
         // ========== 1. 小陀螺调速（拨轮 RC + 键盘） ==========

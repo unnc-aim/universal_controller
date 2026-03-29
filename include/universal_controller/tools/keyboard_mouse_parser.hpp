@@ -34,6 +34,8 @@ namespace universal_controller
          */
         void update_spin_speed(double dial_value, bool shift, bool ctrl);
 
+        void set_spin_mode(bool enabled);
+        bool get_spin_mode() const;
         double get_spin_speed() const;
         double get_speed_scale() const;
         void update_config(const InputProcessorConfig &config);
@@ -42,6 +44,7 @@ namespace universal_controller
         InputProcessorConfig config_;
         double current_spd_mode_;
         double spin_spd_;
+        bool spin_mode_{false};
 
         static double clamp(double value, double min_val, double max_val)
         {
