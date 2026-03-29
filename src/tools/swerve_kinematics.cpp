@@ -17,7 +17,7 @@ namespace universal_controller
                     quarter_range_(ecd_range / 4)
     {
         // 计算几何中心到轮子的距离系数
-        geometry_factor_ = std::sqrt(wheel_track * wheel_track + wheel_base * wheel_base) / 2.0;
+        geometry_factor_ = std::sqrt(wheel_track * wheel_track + wheel_base * wheel_base) /2.0;
         // 归一化比例系数 (假设长宽相等)
         k_ = 0.7071068;
     }
@@ -31,6 +31,7 @@ namespace universal_controller
         std::array<double, 4> drive_speeds{};
         std::array<uint16_t, 4> steer_targets{};
 
+        wz *= 0.9;
         // 对齐旧 sentry_controller 的 Swerve 逆解：A/B/C/D
         double A = vy - wz * (wheel_base_ / geometry_factor_);
         double B = vy + wz * (wheel_base_ / geometry_factor_);

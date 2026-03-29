@@ -217,7 +217,7 @@ namespace universal_controller
             k = 0.2;
 
         // 速度越快，自旋越慢
-        return wz_cmd * (1.0 - k);
+        return wz_cmd * (1.0 - 2.0 * k);
     }
 
     void ChassisController::publish_dji_commands()
@@ -300,11 +300,11 @@ namespace universal_controller
 
     void ChassisController::cb_steer_dji(const custom_msgs::msg::ReadDJIMotor::SharedPtr msg)
     {
-        // DJI 电机 ID 映射: motor1=FL, motor2=BR, motor3=BL, motor4=FR
+        // DJI 电机 ID 映射: motor1=FL, motor2=FR, motor3=BL, motor4=BR
         current_steer_ecds_[0] = msg->motor1_ecd;
-        current_steer_ecds_[1] = msg->motor4_ecd;
+        current_steer_ecds_[1] = msg->motor2_ecd;
         current_steer_ecds_[2] = msg->motor3_ecd;
-        current_steer_ecds_[3] = msg->motor2_ecd;
+        current_steer_ecds_[3] = msg->motor4_ecd;
     }
 
     void ChassisController::cb_steer_lk(const custom_msgs::msg::ReadLkMotorMulti::SharedPtr msg)
