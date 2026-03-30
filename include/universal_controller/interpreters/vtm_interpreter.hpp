@@ -49,10 +49,7 @@ class VTMInterpreter : public rclcpp::Node {
     void execute_action_set(const ActionSet &actions);
 
     // 按钮状态管理
-    void handle_button_transition(bool current_pressed, bool &last_pressed,
-                                  rclcpp::Time &press_start_time,
-                                  bool &long_press_active,
-                                  const ButtonDefinition &def);
+    void handle_button_transition(bool current_pressed, bool &last_pressed, rclcpp::Time &press_start_time, bool &long_press_active, const ButtonDefinition &def);
     void handle_trigger_button(const custom_msgs::msg::ReadVT13RemoteControl &rc);
 
     // 键鼠映射

@@ -32,12 +32,22 @@ class PID {
      * @param max_iout 最大积分限幅
      */
     PID(double kp, double ki, double kd, double max_out, double max_iout)
-        : kp_(kp), ki_(ki), kd_(kd), max_out_(max_out), max_iout_(max_iout), integral_(0.0), last_error_(0.0), last_d_out_(0.0) {}
+        : kp_(kp),
+          ki_(ki),
+          kd_(kd),
+          max_out_(max_out),
+          max_iout_(max_iout),
+          integral_(0.0),
+          last_error_(0.0),
+          last_d_out_(0.0) {
+    }
 
     /**
      * @brief 默认构造函数（参数为0）
      */
-    PID() : PID(0.0, 0.0, 0.0, 0.0, 0.0) {}
+    PID()
+        : PID(0.0, 0.0, 0.0, 0.0, 0.0) {
+    }
 
     /**
      * @brief 计算 PID 输出
@@ -95,17 +105,26 @@ class PID {
 
     // ========== 参数更新 ==========
 
-    void set_kp(double kp) { kp_ = kp; }
-    void set_ki(double ki) { ki_ = ki; }
-    void set_kd(double kd) { kd_ = kd; }
-    void set_max_out(double max_out) { max_out_ = max_out; }
-    void set_max_iout(double max_iout) { max_iout_ = max_iout; }
+    void set_kp(double kp) {
+        kp_ = kp;
+    }
+    void set_ki(double ki) {
+        ki_ = ki;
+    }
+    void set_kd(double kd) {
+        kd_ = kd;
+    }
+    void set_max_out(double max_out) {
+        max_out_ = max_out;
+    }
+    void set_max_iout(double max_iout) {
+        max_iout_ = max_iout;
+    }
 
     /**
      * @brief 批量更新参数
      */
-    void update_params(double kp = NAN, double ki = NAN, double kd = NAN,
-                       double max_out = NAN, double max_iout = NAN) {
+    void update_params(double kp = NAN, double ki = NAN, double kd = NAN, double max_out = NAN, double max_iout = NAN) {
         if (!std::isnan(kp))
             kp_ = kp;
         if (!std::isnan(ki))
@@ -120,12 +139,24 @@ class PID {
 
     // ========== 参数获取 ==========
 
-    double kp() const { return kp_; }
-    double ki() const { return ki_; }
-    double kd() const { return kd_; }
-    double max_out() const { return max_out_; }
-    double max_iout() const { return max_iout_; }
-    double integral() const { return integral_; }
+    double kp() const {
+        return kp_;
+    }
+    double ki() const {
+        return ki_;
+    }
+    double kd() const {
+        return kd_;
+    }
+    double max_out() const {
+        return max_out_;
+    }
+    double max_iout() const {
+        return max_iout_;
+    }
+    double integral() const {
+        return integral_;
+    }
 
   private:
     double kp_;       ///< 比例增益
@@ -156,7 +187,10 @@ class CascadePID {
 
     CascadePID() = default;
 
-    CascadePID(const PID &pos, const PID &spd) : pos_pid(pos), spd_pid(spd) {}
+    CascadePID(const PID &pos, const PID &spd)
+        : pos_pid(pos),
+          spd_pid(spd) {
+    }
 
     /**
      * @brief 级联更新

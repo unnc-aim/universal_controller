@@ -8,9 +8,7 @@
 
 namespace universal_controller {
 
-Hub::Hub(std::shared_ptr<ChassisController> chassis,
-         std::shared_ptr<GimbalController> gimbal,
-         std::shared_ptr<FireController> fire)
+Hub::Hub(std::shared_ptr<ChassisController> chassis, std::shared_ptr<GimbalController> gimbal, std::shared_ptr<FireController> fire)
     : Node("universal_controller_hub"),
       chassis_(std::move(chassis)),
       gimbal_(std::move(gimbal)),

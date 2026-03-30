@@ -134,7 +134,12 @@ struct ChassisCommand {
 
     ChassisCommand() = default;
     ChassisCommand(double vx, double vy, double w, bool spin = false, double spin_spd = 0.0)
-        : vx_gimbal(vx), vy_gimbal(vy), wz(w), spin_mode(spin), spin_speed(spin_spd) {}
+        : vx_gimbal(vx),
+          vy_gimbal(vy),
+          wz(w),
+          spin_mode(spin),
+          spin_speed(spin_spd) {
+    }
 };
 
 /**
@@ -148,7 +153,11 @@ struct GimbalCommand {
 
     GimbalCommand() = default;
     GimbalCommand(double pitch, double yaw, bool action = false, bool abs = true)
-        : pitch_deg(pitch), yaw_rad(yaw), from_action(action), absolute(abs) {}
+        : pitch_deg(pitch),
+          yaw_rad(yaw),
+          from_action(action),
+          absolute(abs) {
+    }
 };
 
 /**
@@ -163,7 +172,12 @@ struct FireCommand {
 
     FireCommand() = default;
     FireCommand(bool friction, bool trigger, bool burst = false, double speed = 6500.0, bool action = false)
-        : friction_on(friction), trigger_fire(trigger), burst_mode(burst), friction_speed(speed), from_action(action) {}
+        : friction_on(friction),
+          trigger_fire(trigger),
+          burst_mode(burst),
+          friction_speed(speed),
+          from_action(action) {
+    }
 };
 
 /**

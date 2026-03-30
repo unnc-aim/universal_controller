@@ -313,9 +313,7 @@ void VTMInterpreter::execute_trigger_actions(const custom_msgs::msg::ReadVT13Rem
     const int gear = static_cast<int>(rc.gear_switching);
 
     // --- 增加对摇杆与拨杆的 DEBUG log ---
-    RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
-                          "execute_trigger_actions running. gear: %d, pause: %d, left_btn: %d, right_btn: %d, trigger: %d",
-                          gear, rc.pause_button, rc.left_custom_button, rc.right_custom_button, rc.trigger);
+    RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "execute_trigger_actions running. gear: %d, pause: %d, left_btn: %d, right_btn: %d, trigger: %d", gear, rc.pause_button, rc.left_custom_button, rc.right_custom_button, rc.trigger);
 
     if (gear >= 0 && gear <= 2) {
         execute_action_set(trigger_definition_.gear_dock_points[static_cast<size_t>(gear)]);
@@ -341,18 +339,9 @@ void VTMInterpreter::execute_trigger_actions(const custom_msgs::msg::ReadVT13Rem
     last_gear_switching_ = rc.gear_switching;
 
     // ========== 按钮处理 ==========
-    handle_button_transition(rc.pause_button == 1, last_pause_button_,
-                             pause_button_press_start_time_,
-                             pause_button_long_press_active_,
-                             trigger_definition_.pause_button);
-    handle_button_transition(rc.left_custom_button == 1, last_left_custom_button_,
-                             left_custom_button_press_start_time_,
-                             left_custom_button_long_press_active_,
-                             trigger_definition_.left_custom_button);
-    handle_button_transition(rc.right_custom_button == 1, last_right_custom_button_,
-                             right_custom_button_press_start_time_,
-                             right_custom_button_long_press_active_,
-                             trigger_definition_.right_custom_button);
+    handle_button_transition(rc.pause_button == 1, last_pause_button_, pause_button_press_start_time_, pause_button_long_press_active_, trigger_definition_.pause_button);
+    handle_button_transition(rc.left_custom_button == 1, last_left_custom_button_, left_custom_button_press_start_time_, left_custom_button_long_press_active_, trigger_definition_.left_custom_button);
+    handle_button_transition(rc.right_custom_button == 1, last_right_custom_button_, right_custom_button_press_start_time_, right_custom_button_long_press_active_, trigger_definition_.right_custom_button);
 
     // ========== 扳机处理 ==========
     handle_trigger_button(rc);
@@ -375,10 +364,7 @@ void VTMInterpreter::execute_trigger_actions(const custom_msgs::msg::ReadVT13Rem
     last_thumb_wheel_ = thumb_now;
 }
 
-void VTMInterpreter::handle_button_transition(bool current_pressed, bool &last_pressed,
-                                              rclcpp::Time &press_start_time,
-                                              bool &long_press_active,
-                                              const ButtonDefinition &def) {
+void VTMInterpreter::handle_button_transition(bool current_pressed, bool &last_pressed, rclcpp::Time &press_start_time, bool &long_press_active, const ButtonDefinition &def) {
     if (!def.loaded) {
         RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Button not loaded, ignoring.");
         return;

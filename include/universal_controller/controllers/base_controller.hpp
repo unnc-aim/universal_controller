@@ -49,14 +49,20 @@ class BaseController {
     /**
      * @brief 检查控制器是否已初始化
      */
-    bool is_initialized() const { return initialized_; }
+    bool is_initialized() const {
+        return initialized_;
+    }
 
   protected:
     bool initialized_{false};
     rclcpp::Node *node_{nullptr};
 
-    void set_initialized(bool val) { initialized_ = val; }
-    void set_node(rclcpp::Node *node) { node_ = node; }
+    void set_initialized(bool val) {
+        initialized_ = val;
+    }
+    void set_node(rclcpp::Node *node) {
+        node_ = node;
+    }
 };
 
 } // namespace universal_controller

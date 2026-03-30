@@ -88,9 +88,7 @@ void parse_dock_points_two(const YAML::Node &dock_points_node, std::array<Action
  * @param out 输出切换数组
  * @param names 切换名称数组
  */
-void parse_transitions(const YAML::Node &transitions_node,
-                       std::array<ActionSet, 4> &out,
-                       const std::array<std::string, 4> &names);
+void parse_transitions(const YAML::Node &transitions_node, std::array<ActionSet, 4> &out, const std::array<std::string, 4> &names);
 
 /**
  * @brief 解析滚轮动作

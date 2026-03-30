@@ -93,13 +93,11 @@ void ChassisController::init(rclcpp::Node *node, const ConfigLoader &cfg) {
             std::bind(&ChassisController::cb_supercap, this, std::placeholders::_1));
         k_dynamic_ = config_.power_K;
         power_limit_ = config_.power_limit_default;
-        RCLCPP_INFO(node->get_logger(), "ChassisController power limiting enabled (R=%.4f, K=%.4f, P0=%.4f)",
-                    config_.power_R, config_.power_K, config_.power_P0);
+        RCLCPP_INFO(node->get_logger(), "ChassisController power limiting enabled (R=%.4f, K=%.4f, P0=%.4f)", config_.power_R, config_.power_K, config_.power_P0);
     }
 
     set_initialized(true);
-    RCLCPP_INFO(node->get_logger(), "ChassisController initialized (motor type: %s)",
-                motor_type_ == MotorType::DJI ? "DJI" : "LK");
+    RCLCPP_INFO(node->get_logger(), "ChassisController initialized (motor type: %s)", motor_type_ == MotorType::DJI ? "DJI" : "LK");
     RCLCPP_INFO(node->get_logger(), "Chassis yaw_center_ecd=%d", yaw_center_ecd_);
 }
 
@@ -172,8 +170,7 @@ void ChassisController::compute_control(double dt) {
     target_steer_ecds_ = steer_ecds;
 }
 
-void ChassisController::transform_to_chassis_frame(double vx_g, double vy_g,
-                                                   double &vx_c, double &vy_c) const {
+void ChassisController::transform_to_chassis_frame(double vx_g, double vy_g, double &vx_c, double &vy_c) const {
     double theta = gimbal_yaw_angle_;
     vx_c = vx_g * std::cos(theta) + vy_g * std::sin(theta);
     vy_c = -vx_g * std::sin(theta) + vy_g * std::cos(theta);

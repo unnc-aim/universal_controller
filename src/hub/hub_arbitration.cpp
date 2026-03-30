@@ -69,7 +69,7 @@ void Hub::dispatch_commands() {
         fire_->stop();
         return;
     }
-    
+
     if (!unified_input_)
         return;
 

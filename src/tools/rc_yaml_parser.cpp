@@ -87,9 +87,7 @@ void parse_dock_points_two(const YAML::Node &dock_points_node, std::array<Action
     }
 }
 
-void parse_transitions(const YAML::Node &transitions_node,
-                       std::array<ActionSet, 4> &out,
-                       const std::array<std::string, 4> &names) {
+void parse_transitions(const YAML::Node &transitions_node, std::array<ActionSet, 4> &out, const std::array<std::string, 4> &names) {
     if (!transitions_node) {
         return;
     }

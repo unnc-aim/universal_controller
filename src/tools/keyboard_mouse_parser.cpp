@@ -20,11 +20,9 @@ KeyboardMouseOutput KeyboardMouseParser::parse(const KeyboardMouseInput &input) 
 
     // ========== 1. 速度分档 ==========
     if (input.key_shift && !input.key_ctrl) {
-        current_spd_mode_ = std::min(config_.keyboard_speed_max,
-                                     current_spd_mode_ + config_.keyboard_speed_step);
+        current_spd_mode_ = std::min(config_.keyboard_speed_max, current_spd_mode_ + config_.keyboard_speed_step);
     } else if (input.key_ctrl && !input.key_shift) {
-        current_spd_mode_ = std::max(config_.keyboard_speed_min,
-                                     current_spd_mode_ - config_.keyboard_speed_step);
+        current_spd_mode_ = std::max(config_.keyboard_speed_min, current_spd_mode_ - config_.keyboard_speed_step);
     }
 
     out.keyboard_speed = current_spd_mode_;

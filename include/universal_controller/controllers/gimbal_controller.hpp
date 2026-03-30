@@ -36,7 +36,9 @@ class GimbalController : public BaseController {
     void init(rclcpp::Node *node, const ConfigLoader &cfg) override;
     void update(double dt) override;
     void stop() override;
-    std::string name() const override { return "GimbalController"; }
+    std::string name() const override {
+        return "GimbalController";
+    }
 
     void set_command(const GimbalCommand &cmd);
 

@@ -81,7 +81,8 @@ class InputProcessor {
           current_spd_mode_(config.keyboard_speed_default),
           spin_spd_(config.spin_speed_default),
           target_pitch_deg_(0.0),
-          target_yaw_rad_(0.0) {}
+          target_yaw_rad_(0.0) {
+    }
 
     /**
      * @brief 处理摇杆输入（带死区）
@@ -142,11 +143,9 @@ class InputProcessor {
      */
     void update_keyboard_speed(bool shift_pressed, bool ctrl_pressed) {
         if (shift_pressed && !ctrl_pressed) {
-            current_spd_mode_ = std::min(config_.keyboard_speed_max,
-                                         current_spd_mode_ + config_.keyboard_speed_step);
+            current_spd_mode_ = std::min(config_.keyboard_speed_max, current_spd_mode_ + config_.keyboard_speed_step);
         } else if (ctrl_pressed && !shift_pressed) {
-            current_spd_mode_ = std::max(config_.keyboard_speed_min,
-                                         current_spd_mode_ - config_.keyboard_speed_step);
+            current_spd_mode_ = std::max(config_.keyboard_speed_min, current_spd_mode_ - config_.keyboard_speed_step);
         }
     }
 
@@ -175,12 +174,16 @@ class InputProcessor {
     /**
      * @brief 获取当前小陀螺速度
      */
-    double get_spin_speed() const { return spin_spd_; }
+    double get_spin_speed() const {
+        return spin_spd_;
+    }
 
     /**
      * @brief 重置小陀螺速度为默认值
      */
-    void reset_spin_speed() { spin_spd_ = config_.spin_speed_default; }
+    void reset_spin_speed() {
+        spin_spd_ = config_.spin_speed_default;
+    }
 
     /**
      * @brief 计算鼠标云台控制
@@ -194,10 +197,8 @@ class InputProcessor {
         double my = mouse_y * config_.mouse_sensitivity;
 
         // 计算偏移量（带限幅）
-        double left_right_offset = clamp(mx * config_.mouse_yaw_gain,
-                                         -config_.mouse_limit, config_.mouse_limit);
-        double top_down_offset = clamp(-my * config_.mouse_pitch_gain,
-                                       -config_.mouse_limit, config_.mouse_limit);
+        double left_right_offset = clamp(mx * config_.mouse_yaw_gain, -config_.mouse_limit, config_.mouse_limit);
+        double top_down_offset = clamp(-my * config_.mouse_pitch_gain, -config_.mouse_limit, config_.mouse_limit);
 
         // Pitch 增量（度）
         double pitch_delta = top_down_offset * config_.pitch_gain_coeff;

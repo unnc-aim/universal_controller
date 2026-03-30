@@ -43,9 +43,15 @@ class Hub : public rclcpp::Node {
         std::shared_ptr<FireController> fire);
     ~Hub() override = default;
 
-    rclcpp::Node::SharedPtr get_chassis_node() const { return chassis_node_; }
-    rclcpp::Node::SharedPtr get_gimbal_node() const { return gimbal_node_; }
-    rclcpp::Node::SharedPtr get_fire_node() const { return fire_node_; }
+    rclcpp::Node::SharedPtr get_chassis_node() const {
+        return chassis_node_;
+    }
+    rclcpp::Node::SharedPtr get_gimbal_node() const {
+        return gimbal_node_;
+    }
+    rclcpp::Node::SharedPtr get_fire_node() const {
+        return fire_node_;
+    }
 
   private:
     // ========== 参数 ==========

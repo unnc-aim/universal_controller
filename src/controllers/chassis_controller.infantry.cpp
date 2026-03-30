@@ -106,8 +106,7 @@ void ChassisController::compute_control(double dt) {
     target_steer_ecds_ = steer_ecds;
 }
 
-void ChassisController::transform_to_chassis_frame(double vx_g, double vy_g,
-                                                   double &vx_c, double &vy_c) const {
+void ChassisController::transform_to_chassis_frame(double vx_g, double vy_g, double &vx_c, double &vy_c) const {
     double theta = gimbal_yaw_angle_;
     vx_c = vx_g * std::cos(theta) + vy_g * std::sin(theta);
     vy_c = -vx_g * std::sin(theta) + vy_g * std::cos(theta);

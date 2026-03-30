@@ -48,11 +48,15 @@ class ChassisController : public BaseController {
     void init(rclcpp::Node *node, const ConfigLoader &cfg) override;
     void update(double dt) override;
     void stop() override;
-    std::string name() const override { return "ChassisController"; }
+    std::string name() const override {
+        return "ChassisController";
+    }
 
     // ========== 指令设置 ==========
     void set_command(const ChassisCommand &cmd);
-    void set_motor_type(MotorType type) { motor_type_ = type; }
+    void set_motor_type(MotorType type) {
+        motor_type_ = type;
+    }
     void set_power_limit(double limit);
 
     // ========== 反馈回调 ==========
@@ -70,8 +74,7 @@ class ChassisController : public BaseController {
     void apply_power_limit(std::array<int16_t, 4> &drive_currents);
 
     // 坐标转换
-    void transform_to_chassis_frame(double vx_g, double vy_g,
-                                    double &vx_c, double &vy_c) const;
+    void transform_to_chassis_frame(double vx_g, double vy_g, double &vx_c, double &vy_c) const;
 
     // 小陀螺抑制
     double compute_spin_suppression(double vx_c, double vy_c, double wz_cmd) const;

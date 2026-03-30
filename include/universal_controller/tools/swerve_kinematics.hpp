@@ -54,9 +54,15 @@ class SwerveKinematics {
     std::pair<uint16_t, double> calc_shortest_path(uint16_t current_ecd, uint16_t target_ecd) const;
 
     // Getters
-    double wheel_track() const { return wheel_track_; }
-    double wheel_base() const { return wheel_base_; }
-    uint32_t ecd_range() const { return ecd_range_; }
+    double wheel_track() const {
+        return wheel_track_;
+    }
+    double wheel_base() const {
+        return wheel_base_;
+    }
+    uint32_t ecd_range() const {
+        return ecd_range_;
+    }
 
   private:
     double wheel_track_;                    ///< 轮距 (米)

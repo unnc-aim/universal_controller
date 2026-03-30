@@ -34,7 +34,9 @@ class FireController : public BaseController {
     void init(rclcpp::Node *node, const ConfigLoader &cfg) override;
     void update(double dt) override;
     void stop() override;
-    std::string name() const override { return "FireController"; }
+    std::string name() const override {
+        return "FireController";
+    }
 
     void set_command(const FireCommand &cmd);
 
