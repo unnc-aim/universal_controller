@@ -22,7 +22,7 @@ namespace universal_controller {
  * 轮子顺序: FL(前左), FR(前右), BL(后左), BR(后右)
  */
 class SwerveKinematics {
-public:
+  public:
     /**
      * @brief 构造函数
      * @param wheel_track 轮距（宽度，单位：米）
@@ -42,8 +42,8 @@ public:
      */
     std::pair<std::array<double, 4>, std::array<uint16_t, 4>> calculate_motion(
         double vx, double vy, double wz,
-        const std::array<uint16_t, 4>& current_steer_ecds,
-        const std::array<int, 4>& ecd_zeros) const;
+        const std::array<uint16_t, 4> &current_steer_ecds,
+        const std::array<int, 4> &ecd_zeros) const;
 
     /**
      * @brief 计算最短旋转路径
@@ -58,14 +58,14 @@ public:
     double wheel_base() const { return wheel_base_; }
     uint32_t ecd_range() const { return ecd_range_; }
 
-private:
-    double wheel_track_;         ///< 轮距 (米)
-    double wheel_base_;          ///< 轴距 (米)
-    uint32_t ecd_range_;         ///< 编码器范围
-    uint32_t half_range_;        ///< 编码器半范围
-    double quarter_range_;       ///< 编码器四分之一范围
-    double geometry_factor_;     ///< 几何中心到轮子的距离系数
-    double k_;                   ///< 归一化比例系数
+  private:
+    double wheel_track_;                    ///< 轮距 (米)
+    double wheel_base_;                     ///< 轴距 (米)
+    uint32_t ecd_range_;                    ///< 编码器范围
+    uint32_t half_range_;                   ///< 编码器半范围
+    double quarter_range_;                  ///< 编码器四分之一范围
+    double geometry_factor_;                ///< 几何中心到轮子的距离系数
+    double k_;                              ///< 归一化比例系数
     double steer_hold_speed_epsilon_{1e-3}; ///< 低速时保持舵角阈值
 
     static double clamp(double value, double min_val, double max_val) {
@@ -73,4 +73,4 @@ private:
     }
 };
 
-}  // namespace universal_controller
+} // namespace universal_controller

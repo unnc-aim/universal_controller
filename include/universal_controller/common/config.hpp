@@ -13,6 +13,8 @@
 #include <vector>
 #include <array>
 
+#include "universal_controller/common/types.hpp"
+
 namespace universal_controller
 {
 
@@ -209,6 +211,17 @@ namespace universal_controller
         ConfigLoader::PIDParams steer_speed_pid{5.5, 0.0, 3.3, 850.0, 500.0};
         ConfigLoader::PIDParams drive_speed_pid{6.0, 0.3, 0.0, 2000.0, 250.0};
 
+        // 功率限制参数
+        bool power_limit_enabled{false};
+        double power_limit_default{80.0};
+        double power_R{0.7708};
+        double power_K{0.0131};
+        double power_P0{2.4565};
+        double power_K_min{0.001};
+        double power_K_max{0.1};
+        double power_filter_alpha{0.1};
+        std::string topic_supercap;
+
         /**
          * @brief 从参数服务器加载
          */
@@ -234,6 +247,17 @@ namespace universal_controller
             steer_angle_pid = cfg.get_pid_params("controllers.chassis.steer_angle_pid", steer_angle_pid);
             steer_speed_pid = cfg.get_pid_params("controllers.chassis.steer_speed_pid", steer_speed_pid);
             drive_speed_pid = cfg.get_pid_params("controllers.chassis.drive_speed_pid", drive_speed_pid);
+
+            // 功率限制
+            power_limit_enabled = cfg.get_prefixed_bool("controllers.chassis", "power_limit_enabled", power_limit_enabled);
+            power_limit_default = cfg.get_prefixed_double("controllers.chassis", "power_limit_default", power_limit_default);
+            power_R = cfg.get_prefixed_double("controllers.chassis", "power_R", power_R);
+            power_K = cfg.get_prefixed_double("controllers.chassis", "power_K", power_K);
+            power_P0 = cfg.get_prefixed_double("controllers.chassis", "power_P0", power_P0);
+            power_K_min = cfg.get_prefixed_double("controllers.chassis", "power_K_min", power_K_min);
+            power_K_max = cfg.get_prefixed_double("controllers.chassis", "power_K_max", power_K_max);
+            power_filter_alpha = cfg.get_prefixed_double("controllers.chassis", "power_filter_alpha", power_filter_alpha);
+            topic_supercap = cfg.get_prefixed_string("controllers.chassis", "topic_supercap", topic_supercap);
         }
     };
 

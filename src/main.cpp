@@ -5,15 +5,14 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include "universal_controller/hub/hub.hpp"
-#include "universal_controller/interpreters/vtm_interpreter.hpp"
-#include "universal_controller/interpreters/ndj_interpreter.hpp"
 #include "universal_controller/controllers/chassis_controller.hpp"
-#include "universal_controller/controllers/gimbal_controller.hpp"
 #include "universal_controller/controllers/fire_controller.hpp"
+#include "universal_controller/controllers/gimbal_controller.hpp"
+#include "universal_controller/hub/hub.hpp"
+#include "universal_controller/interpreters/ndj_interpreter.hpp"
+#include "universal_controller/interpreters/vtm_interpreter.hpp"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
 
     auto vtm_interpreter = std::make_shared<universal_controller::VTMInterpreter>();

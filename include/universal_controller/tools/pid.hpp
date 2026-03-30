@@ -22,7 +22,7 @@ namespace universal_controller {
  * 参考 infantry_controller/pid.py 实现
  */
 class PID {
-public:
+  public:
     /**
      * @brief 构造函数
      * @param kp 比例增益
@@ -32,8 +32,7 @@ public:
      * @param max_iout 最大积分限幅
      */
     PID(double kp, double ki, double kd, double max_out, double max_iout)
-        : kp_(kp), ki_(ki), kd_(kd), max_out_(max_out), max_iout_(max_iout),
-          integral_(0.0), last_error_(0.0), last_d_out_(0.0) {}
+        : kp_(kp), ki_(ki), kd_(kd), max_out_(max_out), max_iout_(max_iout), integral_(0.0), last_error_(0.0), last_d_out_(0.0) {}
 
     /**
      * @brief 默认构造函数（参数为0）
@@ -107,11 +106,16 @@ public:
      */
     void update_params(double kp = NAN, double ki = NAN, double kd = NAN,
                        double max_out = NAN, double max_iout = NAN) {
-        if (!std::isnan(kp)) kp_ = kp;
-        if (!std::isnan(ki)) ki_ = ki;
-        if (!std::isnan(kd)) kd_ = kd;
-        if (!std::isnan(max_out)) max_out_ = max_out;
-        if (!std::isnan(max_iout)) max_iout_ = max_iout;
+        if (!std::isnan(kp))
+            kp_ = kp;
+        if (!std::isnan(ki))
+            ki_ = ki;
+        if (!std::isnan(kd))
+            kd_ = kd;
+        if (!std::isnan(max_out))
+            max_out_ = max_out;
+        if (!std::isnan(max_iout))
+            max_iout_ = max_iout;
     }
 
     // ========== 参数获取 ==========
@@ -123,16 +127,16 @@ public:
     double max_iout() const { return max_iout_; }
     double integral() const { return integral_; }
 
-private:
-    double kp_;          ///< 比例增益
-    double ki_;          ///< 积分增益
-    double kd_;          ///< 微分增益
-    double max_out_;     ///< 最大输出限幅
-    double max_iout_;    ///< 最大积分限幅
+  private:
+    double kp_;       ///< 比例增益
+    double ki_;       ///< 积分增益
+    double kd_;       ///< 微分增益
+    double max_out_;  ///< 最大输出限幅
+    double max_iout_; ///< 最大积分限幅
 
-    double integral_;    ///< 积分累积值
-    double last_error_;  ///< 上一次误差值
-    double last_d_out_;  ///< 上一次 D 项输出值（用于滤波）
+    double integral_;   ///< 积分累积值
+    double last_error_; ///< 上一次误差值
+    double last_d_out_; ///< 上一次 D 项输出值（用于滤波）
 
     /**
      * @brief 数值限幅
@@ -146,13 +150,13 @@ private:
  * @brief 级联 PID 控制器（位置环 + 速度环）
  */
 class CascadePID {
-public:
-    PID pos_pid;  ///< 位置环 PID
-    PID spd_pid;  ///< 速度环 PID
+  public:
+    PID pos_pid; ///< 位置环 PID
+    PID spd_pid; ///< 速度环 PID
 
     CascadePID() = default;
 
-    CascadePID(const PID& pos, const PID& spd) : pos_pid(pos), spd_pid(spd) {}
+    CascadePID(const PID &pos, const PID &spd) : pos_pid(pos), spd_pid(spd) {}
 
     /**
      * @brief 级联更新
@@ -172,4 +176,4 @@ public:
     }
 };
 
-}  // namespace universal_controller
+} // namespace universal_controller
