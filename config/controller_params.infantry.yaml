@@ -1,0 +1,113 @@
+# Universal Controller Framework 统一配置 - 步兵 (Infantry)
+# =====================================================
+# 使用 /** 让同一份参数同时作用于 hub + vtm_interpreter + ndj_interpreter
+# 步兵底盘使用 DJI 电机（位置模式舵向 + 速度模式驱动）
+
+/**:
+  ros__parameters:
+    control_frequency: 1000
+    autoaim_timeout_s: 0.2
+    referee_timeout_s: 0.5
+
+    # ========== 公共话题 ==========
+    topics:
+      unified_input: '/hub/rc_unified_input'
+      autoaim_cmd: '/sp_vision/autoaim_command'
+      referee_constraints: '/referee/constraints'
+      referee_game_status: '/referee/game_status'
+
+    # ========== 电机类型配置 ==========
+    motor_type:
+      chassis: 'DJI'       # 步兵底盘使用 DJI 电机
+      gimbal_pitch: 'DJI'
+      gimbal_yaw: 'LK'
+      fire_trigger: 'DJI'
+
+    # ========== 控制器配置 ==========
+    controllers:
+      chassis:
+        wheel_track: 0.372
+        wheel_base: 0.372
+        ecd_zeros: [7411, 7530, 3419, 2051]
+        yaw_center_ecd: 0
+        topic_drive_write: '/ecat/sn4587586/app1/write'
+        topic_steer_read: '/ecat/sn4587586/app2/read'
+        topic_steer_write: '/ecat/sn4587586/app2/write'
+        topic_yaw_read: '/ecat/sn4587586/app3/read'
+        spin_speed_default: 3000.0
+        spin_speed_min: 800.0
+        spin_speed_max: 6500.0
+        # 步兵不使用功率限制
+        power_limit_enabled: false
+
+      gimbal:
+        pitch_center_ecd: 4600
+        pitch_min_deg: -25.0
+        pitch_max_deg: 40.0
+        mouse_sensitivity: 1.0
+        topic_pitch_write: '/ecat/sn4587585/app4/write'
+        topic_pitch_read: '/ecat/sn4587585/app4/read'
+        topic_yaw_write: '/ecat/sn4587586/app3/write'
+        topic_yaw_read: '/ecat/sn4587586/app3/read'
+        topic_imu_read: '/ecat/sn4587585/app2/read'
+        topic_autoaim_cmd: '/sp_vision/autoaim_command'
+        autoaim_timeout_s: 0.2
+        # Yaw 级联 PID
+        yaw_pos_pid: [20.0, 0.2, 0.5, 50.0, 50.0]
+        yaw_spd_pid: [220.0, 0.3, 4600.0, 2048.0, 200.0]
+
+      fire:
+        enabled: true
+        friction_speed_default: 6500.0
+        shot_period_ms: 30.0
+        load_current_threshold: 500
+        load_speed_ecd: 2.5
+        topic_fire_write: '/ecat/sn4587585/app3/write'
+        topic_fire_read: '/ecat/sn4587585/app3/read'
+        referee_timeout_s: 0.5
+        # 拨盘串级 PID
+        trigger_pos_pid: [0.4, 0.0, 7.0, 13000.0, 1500.0]
+        trigger_spd_pid: [5.0, 0.01, 0.0, 10000.0, 1000.0]
+
+    # ========== RC Interpreter 配置 ==========
+    rc_interpreter:
+      topic_vtm_rc: '/ecat/sn4587585/vt13/read'
+      topic_ndj_rc: '/ecat/sn4587585/app1/read'
+      topic_vtm_output: '/universal_controller/input/vtm'
+      topic_ndj_output: '/universal_controller/input/ndj'
+      connection_timeout_s: 0.5
+      priority: ['vtm', 'ndj']
+      analog_zero_epsilon: 1.0e-6
+
+      joystick_max_output: 8000.0
+      joystick_deadzone: 0.05
+
+      keyboard_speed_default: 3000.0
+      keyboard_speed_min: 0.0
+      keyboard_speed_max: 8000.0
+      keyboard_speed_step: 6.0
+
+      spin_speed_default: 3000.0
+      spin_speed_min: 800.0
+      spin_speed_max: 6500.0
+      spin_dial_gain: 1.0
+      spin_key_gain: 2.4
+      spin_dial_deadzone: 0.05
+
+      mouse_sensitivity: 1.0
+      mouse_yaw_gain: 0.75
+      mouse_pitch_gain: 1.0
+      mouse_limit: 100.0
+
+      pitch_min_deg: -25.0
+      pitch_max_deg: 40.0
+
+    # ========== RC Hub 配置 ==========
+    rc_hub:
+      topic_vtm_input: '/universal_controller/input/vtm'
+      topic_ndj_input: '/universal_controller/input/ndj'
+      topic_unified_output: '/hub/rc_unified_input'
+      connection_timeout_s: 0.5
+      priority: ['vtm', 'ndj']
+      analog_zero_epsilon: 1.0e-6
+      publish_frequency: 200

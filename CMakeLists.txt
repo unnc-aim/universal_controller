@@ -35,6 +35,19 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 # ========== 包含目录 ==========
 include_directories(include)
 
+# ========== 机器人类型选择 ==========
+# 通过 -DROBOT_TYPE=infantry 或 -DROBOT_TYPE=sentry 选择编译目标
+# 默认 sentry
+set(ROBOT_TYPE "sentry" CACHE STRING "Robot type: infantry or sentry")
+
+if(ROBOT_TYPE STREQUAL "infantry")
+  set(CHASSIS_CONTROLLER_SRC src/controllers/chassis_controller.infantry.cpp)
+  message(STATUS "Building for INFANTRY robot")
+else()
+  set(CHASSIS_CONTROLLER_SRC src/controllers/chassis_controller.sentry.cpp)
+  message(STATUS "Building for SENTRY robot")
+endif()
+
 # ========== 源文件列表 ==========
 set(HUB_SOURCES
   src/main.cpp
@@ -53,7 +66,7 @@ set(NDJ_INTERPRETER_SOURCES
 )
 
 set(CONTROLLER_SOURCES
-  src/controllers/chassis_controller.cpp
+  ${CHASSIS_CONTROLLER_SRC}
   src/controllers/gimbal_controller.cpp
   src/controllers/fire_controller.cpp
 )
