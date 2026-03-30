@@ -63,15 +63,15 @@ bool Hub::is_autoaim_valid() const {
 }
 
 void Hub::dispatch_commands() {
-    if (!unified_input_)
-        return;
-
     if (arbitration_.emergency_stop) {
         chassis_->stop();
         gimbal_->stop();
         fire_->stop();
         return;
     }
+    
+    if (!unified_input_)
+        return;
 
     dispatch_chassis();
     dispatch_gimbal();
