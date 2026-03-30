@@ -49,7 +49,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'robot_type',
-            default_value='sentry',
+            default_value='infantry',
             description='Robot type: infantry or sentry'
         ),
         DeclareLaunchArgument(

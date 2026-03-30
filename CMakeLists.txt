@@ -39,7 +39,7 @@ include_directories(include)
 # ========== 机器人类型选择 ==========
 # 通过 -DROBOT_TYPE=infantry 或 -DROBOT_TYPE=sentry 选择编译目标
 # 默认 sentry
-set(ROBOT_TYPE "sentry" CACHE STRING "Robot type: infantry or sentry")
+set(ROBOT_TYPE "infantry" CACHE STRING "Robot type: infantry or sentry")
 
 if(ROBOT_TYPE STREQUAL "infantry")
   set(CHASSIS_CONTROLLER_SRC src/controllers/chassis_controller.infantry.cpp)
