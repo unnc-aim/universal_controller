@@ -13,6 +13,8 @@
 #include <vector>
 #include <array>
 
+#include "universal_controller/common/types.hpp"
+
 namespace universal_controller
 {
 
