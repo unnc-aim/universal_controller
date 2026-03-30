@@ -12,8 +12,8 @@
     topics:
       unified_input: '/hub/rc_unified_input'
       autoaim_cmd: '/sp_vision/autoaim_command'
-      referee_constraints: '/referee/constraints'
-      referee_game_status: '/referee/game_status'
+      referee_constraints: '/referee/parsed/common/constraints'
+      referee_game_status: '/referee/common/game_status'
 
     # ========== 电机类型配置 ==========
     motor_type:
@@ -54,7 +54,7 @@
         topic_supercap: '/ecat/sn2228292/app13/read'
 
       gimbal:
-        pitch_center_ecd: 6050
+        pitch_center_ecd: 5360
         pitch_min_deg: -25.0
         pitch_max_deg: 30.0
         mouse_sensitivity: 1.0

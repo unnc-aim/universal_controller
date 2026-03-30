@@ -122,8 +122,8 @@ Hub 由 4 个源文件组成：
 | `/universal_controller/input/ndj` | UnifiedInput | Hub | NDJ 统一输入 |
 | `/sp_vision/autoaim_command` | AutoAimCommandMsg | Hub, GimbalController | 自瞄指令 |
 | `/cmd_vel` | Twist | Hub | 导航速度指令 |
-| `/referee/constraints` | Float32MultiArray | Hub | 功率/热量约束 |
-| `/referee/game_status` | GameStatus | Hub | 比赛状态 |
+| `/referee/parsed/common/constraints` | Float32MultiArray | Hub | 功率/热量约束 |
+| `/referee/common/game_status` | GameStatus | Hub | 比赛状态 |
 | `/ecat/sn*/app*/read` | ReadDJIMotor/ReadLkMotor/ReadLkMotorMulti | Controllers | 电机反馈 |
 | `/ecat/sn*/app*/read` | Imu | GimbalController | IMU 姿态反馈 |
 
@@ -219,8 +219,8 @@ Hub 对各子系统（底盘/云台/发射）独立进行仲裁，不同子系�
     topics:
       unified_input: '/hub/rc_unified_input'
       autoaim_cmd: '/sp_vision/autoaim_command'
-      referee_constraints: '/referee/constraints'
-      referee_game_status: '/referee/game_status'
+      referee_constraints: '/referee/parsed/common/constraints'
+      referee_game_status: '/referee/common/game_status'
 
     motor_type:
       chassis: 'LK'           # 'DJI' or 'LK'

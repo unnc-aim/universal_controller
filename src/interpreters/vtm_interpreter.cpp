@@ -171,7 +171,7 @@ void VTMInterpreter::load_trigger_definition(const std::string &file_path) {
 void VTMInterpreter::cb_rc(const custom_msgs::msg::ReadVT13RemoteControl::SharedPtr msg) {
     raw_rc_data_ = msg;
     last_rc_time_ = this->now();
-    connected_ = true; // VT13 假设有数据就是连接状态
+    connected_ = (msg->online == 1);
     process_input();
 }
 
@@ -494,6 +494,17 @@ void VTMInterpreter::publish_unified() {
     }
 
     if (!raw_rc_data_ || !connected_) {
+        if (!raw_rc_data_) {
+            return;
+        }
+
+        unified_output_.connected = false;
+        unified_output_.emergency_stop = true;
+        unified_output_.friction_on = false;
+        unified_output_.fire_trigger = false;
+        unified_output_.burst_mode = false;
+        unified_output_.header.stamp = this->now();
+        pub_unified_->publish(unified_output_);
         return;
     }
 
