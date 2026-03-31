@@ -47,7 +47,7 @@ void ChassisController::init(rclcpp::Node *node, const ConfigLoader &cfg) {
         std::bind(&ChassisController::cb_yaw, this, std::placeholders::_1));
 
     // Super Cao
-        if (config_.power_limit_enabled && !config_.topic_supercap.empty()) {
+    if (config_.power_limit_enabled && !config_.topic_supercap.empty()) {
         sub_supercap_ = node->create_subscription<custom_msgs::msg::ReadSuperCap>(
             config_.topic_supercap, qos_best_effort_,
             std::bind(&ChassisController::cb_supercap, this, std::placeholders::_1));
@@ -57,8 +57,7 @@ void ChassisController::init(rclcpp::Node *node, const ConfigLoader &cfg) {
 
         k_dynamic_ = config_.power_K;
         power_limit_ = config_.power_limit_default;
-        RCLCPP_INFO(node->get_logger(), "ChassisController power limiting enabled (R=%.4f, K=%.4f, P0=%.4f)",
-                    config_.power_R, config_.power_K, config_.power_P0);
+        RCLCPP_INFO(node->get_logger(), "ChassisController power limiting enabled (R=%.4f, K=%.4f, P0=%.4f)", config_.power_R, config_.power_K, config_.power_P0);
     }
 
     set_initialized(true);
@@ -97,6 +96,14 @@ void ChassisController::stop() {
     auto msg = custom_msgs::msg::WriteDJIMotor();
     pub_drive_dji_->publish(msg);
     pub_steer_dji_->publish(msg);
+
+    // 急停时 Hub 会持续调用 stop()，在此保持 supercap 指令连续发布。
+    if (config_.power_limit_enabled && pub_supercap_) {
+        const double charge_available = power_limit_ - supercap_chassis_only_power_;
+        const int allow_charge = std::max(0, static_cast<int>(std::floor(charge_available)));
+        const int max_charge = std::max(0, static_cast<int>(std::floor(power_limit_)));
+        publish_supercap_command(max_charge, allow_charge);
+    }
 }
 
 void ChassisController::compute_control(double dt) {
@@ -187,13 +194,13 @@ void ChassisController::cb_steer_dji(const custom_msgs::msg::ReadDJIMotor::Share
     current_steer_ecds_[3] = msg->motor2_ecd;
 }
 
-void ChassisController::cb_supercap(const custom_msgs::msg::ReadSuperCap::SharedPtr msg){
+void ChassisController::cb_supercap(const custom_msgs::msg::ReadSuperCap::SharedPtr msg) {
     supercap_online_ = (msg->online != 0);
     supercap_chassis_only_power_ = static_cast<double>(msg->chassis_only_power);
 }
 
 void ChassisController::apply_power_limit(std::array<int16_t, 4> &drive_currents) {
-        // 1. 用实测功率在线标定 K_dynamic
+    // 1. 用实测功率在线标定 K_dynamic
     if (supercap_online_ && supercap_chassis_only_power_ > 0.0) {
         double last_i2 = 0.0, last_wi = 0.0;
         for (int i = 0; i < 4; ++i) {
