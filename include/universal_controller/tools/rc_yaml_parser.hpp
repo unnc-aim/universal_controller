@@ -139,4 +139,28 @@ struct ActionStates {
 
 void execute_action_set(const ActionSet &actions, ActionStates &states);
 
+// ========== 键鼠定义解析 ==========
+
+/**
+ * @brief 解析键鼠按钮事件（带 speed 字段）
+ * @param event_node YAML 事件节点
+ * @param out 输出 KMButtonEvent
+ */
+void parse_km_button_event(const YAML::Node &event_node, KMButtonEvent &out);
+
+/**
+ * @brief 解析键鼠按钮定义
+ * @param button_node YAML 按钮节点
+ * @param out 输出 KMButtonDefinition
+ */
+void parse_km_button_definition(const YAML::Node &button_node, KMButtonDefinition &out);
+
+/**
+ * @brief 解析完整键鼠触发定义
+ * @param file_path YAML 文件路径
+ * @param out 输出 KMTriggerDefinition
+ * @return true 解析成功
+ */
+bool parse_km_trigger_definition(const std::string &file_path, KMTriggerDefinition &out);
+
 } // namespace universal_controller

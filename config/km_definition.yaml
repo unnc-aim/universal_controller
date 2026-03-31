@@ -1,0 +1,123 @@
+# KM Trigger Definition
+# 键鼠按钮/滚轮的 YAML 动作映射
+#
+# 规则:
+# - 所有动作默认 false
+# - 只有填写并设为 true 的动作才会生效
+# - buttons 可使用 on/off/toggle
+#
+# 按钮事件模型 (同 VTM):
+# - on_press: 按下瞬间触发
+# - 如果保持时间 < long_press_threshold_s: 短按
+#   - on_short_press_released: 短按释放时触发
+# - 如果保持时间 >= long_press_threshold_s: 长按
+#   - on_long_press_reached: 长按阈值到达时触发
+#   - on_long_press_released: 长按释放时触发
+# - on_release: 任何释放时触发
+#
+# 速度控制键 (shift/ctrl) 额外支持 speed 字段直接设置速度
+# 鼠标移动不在此范畴，强制绑定云台运动，仅通过 sensitivity 参数控制灵敏度
+
+km_trigger_def:
+  version: 1
+
+  # 供解析器参考: 可选动作全集（buttons 可 on/off/toggle）
+  # action_schema:
+  #   emergency_stop: [on, off, toggle] # 急停
+  #   autoaim: [on, off, toggle] # 自瞄
+  #   nav_topic: [on, off, toggle] # 导航
+  #   behavior_tree_topic: [on, off, toggle] # 行为树
+  #   friction_wheel: [on, off, toggle] # 摩擦轮
+  #   feeder: [on, off, toggle] # 拨弹盘
+  #   feeder_burst: [on, off, toggle] # 连发模式
+  #   spin_mode: [on, off, toggle] # 小陀螺开关
+  #   spin_control: [accelerate, decelerate] # 小陀螺速度控制
+
+  # 速度默认值
+  speed_default: 5000
+
+  # ========== 速度控制键 ==========
+  # Shift 按下 → 8000, 释放 → 5000
+  key_shift:
+    on_press:
+      speed: 8000
+    on_release:
+      speed: 5000
+
+  # Ctrl 按下 → 2000, 释放 → 5000
+  key_ctrl:
+    on_press:
+      speed: 2000
+    on_release:
+      speed: 5000
+
+  # ========== 功能键 (WASD 不参与动作映射，仅控制方向) ==========
+  key_q:
+    long_press_threshold_s: 0.2
+    # on_press:
+    #   actions: {}
+
+  key_e:
+    long_press_threshold_s: 0.2
+
+  key_r:
+    long_press_threshold_s: 0.2
+
+  key_f:
+    long_press_threshold_s: 0.2
+
+  key_g:
+    long_press_threshold_s: 0.2
+
+  key_z:
+    long_press_threshold_s: 0.2
+
+  key_x:
+    long_press_threshold_s: 0.2
+
+  key_c:
+    long_press_threshold_s: 0.2
+
+  key_v:
+    long_press_threshold_s: 0.2
+
+  key_b:
+    long_press_threshold_s: 0.2
+
+  # ========== 鼠标按钮 ==========
+  # 左键: 按住发射
+  mouse_left:
+    on_press:
+      actions:
+        feeder: {on: true}
+    on_release:
+      actions:
+        feeder: {off: true}
+
+  # 右键: 按住自瞄
+  mouse_right:
+    on_press:
+      actions:
+        autoaim: {on: true}
+    on_release:
+      actions:
+        autoaim: {off: true}
+
+  # 中键: 默认无动作
+  mouse_middle:
+    long_press_threshold_s: 0.2
+    # on_press:
+    #   actions: {}
+
+  # ========== 鼠标滚轮 ==========
+  mouse_wheel_up:
+    threshold: 0.5
+    actions:
+      spin_control:
+        accelerate: true
+
+  mouse_wheel_down:
+    threshold: 0.5
+    actions:
+      spin_control:
+        decelerate: true

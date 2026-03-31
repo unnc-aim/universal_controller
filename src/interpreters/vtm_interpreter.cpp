@@ -44,6 +44,7 @@ void VTMInterpreter::declare_parameters() {
     this->declare_parameter("rc_interpreter.topic_vtm_rc", "/ecat/vt13/app1/read");
     this->declare_parameter("rc_interpreter.topic_vtm_output", "/universal_controller/input/vtm");
     this->declare_parameter("rc_interpreter.vtm_definition_file", "");
+    this->declare_parameter("rc_interpreter.km_definition_file", "");
 
     // 连接超时
     this->declare_parameter("rc_interpreter.connection_timeout_s", 0.5);
@@ -77,6 +78,7 @@ void VTMInterpreter::load_parameters() {
     topic_rc_read_ = this->get_parameter("rc_interpreter.topic_vtm_rc").as_string();
     topic_unified_output_ = this->get_parameter("rc_interpreter.topic_vtm_output").as_string();
     vtm_definition_file_ = this->get_parameter("rc_interpreter.vtm_definition_file").as_string();
+    km_definition_file_ = this->get_parameter("rc_interpreter.km_definition_file").as_string();
     connection_timeout_s_ = this->get_parameter("rc_interpreter.connection_timeout_s").as_double();
 
     // 加载输入处理器配置
@@ -121,6 +123,24 @@ void VTMInterpreter::load_parameters() {
 
     if (!vtm_definition_file_.empty()) {
         load_trigger_definition(vtm_definition_file_);
+    }
+
+    // 加载键鼠 YAML 定义
+    km_definition_file_ = this->get_parameter("rc_interpreter.km_definition_file").as_string();
+    if (km_definition_file_.empty()) {
+        try {
+            km_definition_file_ = ament_index_cpp::get_package_share_directory("universal_controller") +
+                                  "/config/km_definition.yaml";
+        } catch (const std::exception &e) {
+            RCLCPP_WARN(this->get_logger(), "Failed to resolve KM config path: %s", e.what());
+        }
+    }
+    if (!km_definition_file_.empty()) {
+        if (km_parser_.load_definition(km_definition_file_)) {
+            RCLCPP_INFO(this->get_logger(), "Loaded KM definition: %s", km_definition_file_.c_str());
+        } else {
+            RCLCPP_WARN(this->get_logger(), "Failed to load KM definition: %s", km_definition_file_.c_str());
+        }
     }
 }
 
@@ -235,6 +255,14 @@ void VTMInterpreter::process_input() {
     // ========== 键鼠解析 ==========
     auto kmi = map_keyboard_mouse(rc);
     km_parser_.set_spin_mode(spin_mode_enabled_);
+
+    // 处理 KM 按钮事件（边沿检测 + 长按）→ ActionSet
+    if (km_parser_.definition_loaded()) {
+        double time_s = this->now().seconds();
+        auto km_actions = km_parser_.process_button_events(kmi, time_s);
+        execute_action_set(km_actions);
+    }
+
     auto km_out = km_parser_.parse(kmi);
 
     // ========== 1. 小陀螺调速（拨轮 RC + 键盘） ==========

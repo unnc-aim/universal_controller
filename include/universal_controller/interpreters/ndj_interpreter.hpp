@@ -84,6 +84,7 @@ class NDJInterpreter : public rclcpp::Node {
     std::string topic_rc_read_;
     std::string topic_unified_output_;
     std::string ndj_definition_file_;
+    std::string km_definition_file_;
 
     // 定义驱动状态
     NDJTriggerDefinition trigger_definition_;

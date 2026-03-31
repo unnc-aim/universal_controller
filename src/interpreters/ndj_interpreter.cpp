@@ -44,6 +44,7 @@ void NDJInterpreter::declare_parameters() {
     this->declare_parameter("rc_interpreter.topic_ndj_rc", "/ecat/sn4653115/app1/read");
     this->declare_parameter("rc_interpreter.topic_ndj_output", "/universal_controller/input/ndj");
     this->declare_parameter("rc_interpreter.ndj_definition_file", "");
+    this->declare_parameter("rc_interpreter.km_definition_file", "");
 
     // 连接超时
     this->declare_parameter("rc_interpreter.connection_timeout_s", 0.5);
@@ -120,6 +121,24 @@ void NDJInterpreter::load_parameters() {
 
     if (!ndj_definition_file_.empty()) {
         load_trigger_definition(ndj_definition_file_);
+    }
+
+    // 加载键鼠 YAML 定义
+    km_definition_file_ = this->get_parameter("rc_interpreter.km_definition_file").as_string();
+    if (km_definition_file_.empty()) {
+        try {
+            km_definition_file_ = ament_index_cpp::get_package_share_directory("universal_controller") +
+                                  "/config/km_definition.yaml";
+        } catch (const std::exception &e) {
+            RCLCPP_WARN(this->get_logger(), "Failed to resolve KM config path: %s", e.what());
+        }
+    }
+    if (!km_definition_file_.empty()) {
+        if (km_parser_.load_definition(km_definition_file_)) {
+            RCLCPP_INFO(this->get_logger(), "Loaded KM definition: %s", km_definition_file_.c_str());
+        } else {
+            RCLCPP_WARN(this->get_logger(), "Failed to load KM definition: %s", km_definition_file_.c_str());
+        }
     }
 }
 
@@ -217,7 +236,6 @@ void NDJInterpreter::process_input() {
     unified_output_.connected = connected_;
     unified_output_.control_source = "ndj";
     unified_output_.header.stamp = this->now();
-    feeder_state_ = false; // 每帧重置单发状态
 
     if (trigger_definition_.loaded) {
         execute_trigger_actions(rc);
@@ -226,6 +244,14 @@ void NDJInterpreter::process_input() {
     // ========== 键鼠解析 ==========
     auto kmi = map_keyboard_mouse(rc);
     km_parser_.set_spin_mode(spin_mode_enabled_);
+
+    // 处理 KM 按钮事件（边沿检测 + 长按）→ ActionSet
+    if (km_parser_.definition_loaded()) {
+        double time_s = this->now().seconds();
+        auto km_actions = km_parser_.process_button_events(kmi, time_s);
+        execute_action_set(km_actions);
+    }
+
     auto km_out = km_parser_.parse(kmi);
 
     // ========== 1. 小陀螺调速（拨轮 RC + 键盘） ==========

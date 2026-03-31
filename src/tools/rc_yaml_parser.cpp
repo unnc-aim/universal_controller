@@ -169,4 +169,71 @@ void execute_action_set(const ActionSet &actions, ActionStates &states) {
     apply_spin_control_action(actions.spin_control, states.spin_speed_delta);
 }
 
+// ========== 键鼠定义解析 ==========
+
+void parse_km_button_event(const YAML::Node &event_node, KMButtonEvent &out) {
+    if (!event_node) {
+        return;
+    }
+
+    out.speed = yaml_double(event_node, "speed", -1.0);
+    parse_actions(event_node["actions"], out.actions);
+}
+
+void parse_km_button_definition(const YAML::Node &button_node, KMButtonDefinition &out) {
+    if (!button_node) {
+        return;
+    }
+
+    out.loaded = true;
+    out.long_press_threshold_s = yaml_double(button_node, "long_press_threshold_s", 0.2);
+    parse_km_button_event(button_node["on_press"], out.on_press);
+    parse_km_button_event(button_node["on_short_press_released"], out.on_short_press_released);
+    parse_km_button_event(button_node["on_long_press_reached"], out.on_long_press_reached);
+    parse_km_button_event(button_node["on_long_press_released"], out.on_long_press_released);
+    parse_km_button_event(button_node["on_release"], out.on_release);
+}
+
+bool parse_km_trigger_definition(const std::string &file_path, KMTriggerDefinition &out) {
+    try {
+        const YAML::Node root = YAML::LoadFile(file_path);
+        const YAML::Node def = root["km_trigger_def"];
+        if (!def) {
+            return false;
+        }
+
+        out.speed_default = yaml_double(def, "speed_default", 5000.0);
+
+        // 速度控制键
+        parse_km_button_definition(def["key_shift"], out.key_shift);
+        parse_km_button_definition(def["key_ctrl"], out.key_ctrl);
+
+        // 功能键
+        parse_km_button_definition(def["key_q"], out.key_q);
+        parse_km_button_definition(def["key_e"], out.key_e);
+        parse_km_button_definition(def["key_r"], out.key_r);
+        parse_km_button_definition(def["key_f"], out.key_f);
+        parse_km_button_definition(def["key_g"], out.key_g);
+        parse_km_button_definition(def["key_z"], out.key_z);
+        parse_km_button_definition(def["key_x"], out.key_x);
+        parse_km_button_definition(def["key_c"], out.key_c);
+        parse_km_button_definition(def["key_v"], out.key_v);
+        parse_km_button_definition(def["key_b"], out.key_b);
+
+        // 鼠标按钮
+        parse_km_button_definition(def["mouse_left"], out.mouse_left);
+        parse_km_button_definition(def["mouse_right"], out.mouse_right);
+        parse_km_button_definition(def["mouse_middle"], out.mouse_middle);
+
+        // 鼠标滚轮
+        parse_dial_action(def["mouse_wheel_up"], out.mouse_wheel_up);
+        parse_dial_action(def["mouse_wheel_down"], out.mouse_wheel_down);
+
+        out.loaded = true;
+        return true;
+    } catch (const std::exception &e) {
+        return false;
+    }
+}
+
 } // namespace universal_controller

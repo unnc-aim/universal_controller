@@ -88,6 +88,7 @@ class VTMInterpreter : public rclcpp::Node {
     std::string topic_rc_read_;
     std::string topic_unified_output_;
     std::string vtm_definition_file_;
+    std::string km_definition_file_;
 
     // Trigger 定义
     VTMTriggerDefinition trigger_definition_;
