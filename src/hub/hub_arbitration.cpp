@@ -98,8 +98,8 @@ void Hub::dispatch_chassis() {
         case SubsystemInput::NAVIGATION: {
             // 使用导航速度指令
             ChassisCommand cmd;
-            cmd.vx_gimbal = nav_cmd_vel_->linear.x;
-            cmd.vy_gimbal = nav_cmd_vel_->linear.y;
+            cmd.vx_gimbal = nav_cmd_vel_->linear.x * 1348;
+            cmd.vy_gimbal = nav_cmd_vel_->linear.y * -1348;
             cmd.wz = nav_cmd_vel_->angular.z;
             cmd.spin_mode = false;
             cmd.spin_speed = 0.0;
