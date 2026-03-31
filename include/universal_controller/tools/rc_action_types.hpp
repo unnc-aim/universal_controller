@@ -14,6 +14,7 @@
 #pragma once
 
 #include <array>
+#include <map>
 
 namespace universal_controller {
 
@@ -94,6 +95,9 @@ struct ButtonDefinition {
     ActionSet on_long_press_reached;   // 长按阈值到达时触发
     ActionSet on_long_press_released;  // 长按释放时触发
     ActionSet on_release;              // 任何释放时触发
+
+    // 按持续时间释放：{持续时间(秒): 动作}，释放时按住时间 >= 阈值则触发
+    std::map<double, ActionSet> on_released_after_s;
 };
 
 /**
@@ -285,6 +289,9 @@ struct KMButtonDefinition {
     KMButtonEvent on_long_press_reached;
     KMButtonEvent on_long_press_released;
     KMButtonEvent on_release;
+
+    // 按持续时间释放：{持续时间(秒): 事件}，释放时按住时间 >= 阈值则触发
+    std::map<double, KMButtonEvent> on_released_after_s;
 };
 
 /**

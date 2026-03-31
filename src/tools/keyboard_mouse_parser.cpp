@@ -74,6 +74,17 @@ void KeyboardMouseParser::process_one_button(
             speed_out = def.on_release.speed;
         }
         merge_action_set(accum, def.on_release.actions);
+
+        // on_released_after_s: 按持续时间匹配
+        double hold_time = current_time_s - state.press_start_time_s;
+        for (const auto &[threshold, event] : def.on_released_after_s) {
+            if (hold_time >= threshold) {
+                if (event.speed >= 0) {
+                    speed_out = event.speed;
+                }
+                merge_action_set(accum, event.actions);
+            }
+        }
     }
 }
 

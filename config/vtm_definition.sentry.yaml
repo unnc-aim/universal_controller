@@ -98,15 +98,12 @@ vtm_trigger_def:
   # 短按: 单发，长按: 连发
   trigger:
     long_press_threshold_s: 0.2
-    # on_press:
-    #   actions: {}
-    on_short_press_released:
+    on_press:
       actions:
         feeder: {on: true}
         feeder_burst: {off: true}
     on_long_press_reached:
       actions:
-        feeder: {on: true}
         feeder_burst: {on: true}
     on_release:
       actions:

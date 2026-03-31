@@ -64,7 +64,9 @@ km_trigger_def:
     long_press_threshold_s: 0.2
 
   key_f:
-    long_press_threshold_s: 0.2
+    on_press:
+      actions:
+        friction_wheel: {toggle: true}
 
   key_g:
     long_press_threshold_s: 0.2
@@ -79,7 +81,9 @@ km_trigger_def:
     long_press_threshold_s: 0.2
 
   key_v:
-    long_press_threshold_s: 0.2
+    on_press:
+      actions:
+        spin_mode: {toggle: true}
 
   key_b:
     long_press_threshold_s: 0.2

@@ -132,6 +132,17 @@ void parse_button_definition(const YAML::Node &button_node, ButtonDefinition &ou
     parse_actions(event_actions(button_node["on_long_press_reached"]), out.on_long_press_reached);
     parse_actions(event_actions(button_node["on_long_press_released"]), out.on_long_press_released);
     parse_actions(event_actions(button_node["on_release"]), out.on_release);
+
+    // 解析 on_released_after_s: {时间阈值: {actions: ...}}
+    const auto released_after = button_node["on_released_after_s"];
+    if (released_after && released_after.IsMap()) {
+        for (const auto &entry : released_after) {
+            double threshold = entry.first.as<double>();
+            ActionSet actions;
+            parse_actions(event_actions(entry.second), actions);
+            out.on_released_after_s[threshold] = actions;
+        }
+    }
 }
 
 // ========== 动作执行工具实现 ==========
@@ -192,6 +203,17 @@ void parse_km_button_definition(const YAML::Node &button_node, KMButtonDefinitio
     parse_km_button_event(button_node["on_long_press_reached"], out.on_long_press_reached);
     parse_km_button_event(button_node["on_long_press_released"], out.on_long_press_released);
     parse_km_button_event(button_node["on_release"], out.on_release);
+
+    // 解析 on_released_after_s: {时间阈值: {actions: ..., speed: ...}}
+    const auto released_after = button_node["on_released_after_s"];
+    if (released_after && released_after.IsMap()) {
+        for (const auto &entry : released_after) {
+            double threshold = entry.first.as<double>();
+            KMButtonEvent event;
+            parse_km_button_event(entry.second, event);
+            out.on_released_after_s[threshold] = event;
+        }
+    }
 }
 
 bool parse_km_trigger_definition(const std::string &file_path, KMTriggerDefinition &out) {

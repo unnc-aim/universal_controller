@@ -419,6 +419,8 @@ void VTMInterpreter::handle_button_transition(bool current_pressed, bool &last_p
 
     // 释放边沿
     if (!current_pressed && last_pressed) {
+        const double hold_time = (now - press_start_time).seconds();
+
         // 先执行 on_release（任何释放都触发）
         execute_action_set(def.on_release);
 
@@ -428,6 +430,13 @@ void VTMInterpreter::handle_button_transition(bool current_pressed, bool &last_p
         } else {
             // 长按释放
             execute_action_set(def.on_long_press_released);
+        }
+
+        // on_released_after_s: 按持续时间匹配
+        for (const auto &[threshold, actions] : def.on_released_after_s) {
+            if (hold_time >= threshold) {
+                execute_action_set(actions);
+            }
         }
     }
 
@@ -462,6 +471,8 @@ void VTMInterpreter::handle_trigger_button(const custom_msgs::msg::ReadVT13Remot
 
     // 释放边沿
     if (!trigger_pressed && trigger_currently_pressed_) {
+        const double hold_time = (now - trigger_press_start_time_).seconds();
+
         // 先执行 on_release
         execute_action_set(trigger_definition_.trigger.on_release);
 
@@ -471,6 +482,13 @@ void VTMInterpreter::handle_trigger_button(const custom_msgs::msg::ReadVT13Remot
         } else {
             // 长按释放
             execute_action_set(trigger_definition_.trigger.on_long_press_released);
+        }
+
+        // on_released_after_s: 按持续时间匹配
+        for (const auto &[threshold, actions] : trigger_definition_.trigger.on_released_after_s) {
+            if (hold_time >= threshold) {
+                execute_action_set(actions);
+            }
         }
     }
 
