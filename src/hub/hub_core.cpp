@@ -53,11 +53,22 @@ Hub::Hub(std::shared_ptr<ChassisController> chassis, std::shared_ptr<GimbalContr
         topic_autoaim, qos_best_effort_,
         std::bind(&Hub::cb_autoaim, this, std::placeholders::_1));
 
-    // 订阅导航速度指令
+    // 订阅导航速度指令（TwistStamped）
     std::string topic_nav_vel = config_loader_.get_string("topics.nav_cmd_vel", "/cmd_vel");
-    sub_nav_vel_ = this->create_subscription<geometry_msgs::msg::Twist>(
+    sub_nav_vel_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
         topic_nav_vel, qos_best_effort_,
         std::bind(&Hub::cb_nav_vel, this, std::placeholders::_1));
+
+    // 订阅云台扫描指令（行为树发布）
+    std::string topic_gimbal_scan = config_loader_.get_string("topics.gimbal_scan_cmd", "/gimbal_scan_cmd");
+    sub_gimbal_scan_ = this->create_subscription<pb_rm_interfaces::msg::GimbalCmd>(
+        topic_gimbal_scan, qos_best_effort_,
+        std::bind(&Hub::cb_gimbal_scan, this, std::placeholders::_1));
+
+    // 发布自瞄开关
+    std::string topic_auto_aim_switch = config_loader_.get_string("topics.auto_aim_switch", "/auto_aim_switch");
+    pub_auto_aim_switch_ = this->create_publisher<std_msgs::msg::Int32>(
+        topic_auto_aim_switch, qos_best_effort_);
 
     // 订阅裁判系统
     std::string topic_referee = config_loader_.get_string("topics.referee_constraints", "/referee/parsed/common/constraints");
@@ -91,6 +102,9 @@ void Hub::declare_parameters() {
     this->declare_parameter("referee_timeout_s", 0.5);
     this->declare_parameter("nav_vel_timeout_s", 0.2);
     this->declare_parameter("topics.nav_cmd_vel", "/cmd_vel");
+    this->declare_parameter("topics.auto_aim_switch", "/auto_aim_switch");
+    this->declare_parameter("topics.gimbal_scan_cmd", "/gimbal_scan_cmd");
+    this->declare_parameter("gimbal_scan_timeout_s", 0.5);
 
     // RC 融合参数
     this->declare_parameter("rc_hub.topic_vtm_input", "/universal_controller/input/vtm");
@@ -121,6 +135,9 @@ void Hub::control_loop() {
 
     // 分发指令
     dispatch_commands();
+
+    // 发布自瞄开关
+    publish_auto_aim_switch();
 
     if (arbitration_.emergency_stop) {
         return;

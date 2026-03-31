@@ -76,6 +76,11 @@ class GimbalController : public BaseController {
     double target_pitch_deg_{0.0};
     double target_yaw_rad_{0.0};
 
+    // 扫描状态
+    double dt_{0.0};
+    double scan_direction_yaw_{1.0};
+    double scan_direction_pitch_{1.0};
+
     // ROS2 接口
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr sub_imu_;
     rclcpp::Subscription<custom_msgs::msg::ReadDJIMotor>::SharedPtr sub_pitch_;

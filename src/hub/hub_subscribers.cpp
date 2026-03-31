@@ -7,7 +7,7 @@
 
 namespace universal_controller {
 
-void Hub::cb_nav_vel(const geometry_msgs::msg::Twist::SharedPtr msg) {
+void Hub::cb_nav_vel(const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
     nav_cmd_vel_ = msg;
     nav_vel_last_time_ = this->now();
 }
@@ -16,6 +16,11 @@ void Hub::cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg) {
     autoaim_cmd_ = msg;
     autoaim_last_time_ = this->now().seconds();
     autoaim_valid_ = true;
+}
+
+void Hub::cb_gimbal_scan(const pb_rm_interfaces::msg::GimbalCmd::SharedPtr msg) {
+    gimbal_scan_cmd_ = msg;
+    gimbal_scan_last_time_ = this->now();
 }
 
 void Hub::cb_referee_constraints(const dji_referee_protocol::msg::Constraints::SharedPtr msg) {

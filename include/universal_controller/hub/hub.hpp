@@ -22,8 +22,10 @@
 #include "universal_controller/controllers/fire_controller.hpp"
 #include "universal_controller/controllers/gimbal_controller.hpp"
 
-#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "sp_msgs/msg/auto_aim_command_msg.hpp"
+#include "std_msgs/msg/int32.hpp"
+#include "pb_rm_interfaces/msg/gimbal_cmd.hpp"
 #include "universal_controller/msg/unified_input.hpp"
 
 // DJI裁判系统自定义消息
@@ -68,8 +70,9 @@ class Hub : public rclcpp::Node {
     std::optional<msg::UnifiedInput::SharedPtr> get_rc_source_by_name(const std::string &name) const;
 
     // ========== 外部输入回调 ==========
-    void cb_nav_vel(const geometry_msgs::msg::Twist::SharedPtr msg);
+    void cb_nav_vel(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
     void cb_autoaim(const sp_msgs::msg::AutoAimCommandMsg::SharedPtr msg);
+    void cb_gimbal_scan(const pb_rm_interfaces::msg::GimbalCmd::SharedPtr msg);
     void cb_referee_constraints(const dji_referee_protocol::msg::Constraints::SharedPtr msg);
     void cb_referee_game_status(const dji_referee_protocol::msg::GameStatus::SharedPtr msg);
 
@@ -80,7 +83,10 @@ class Hub : public rclcpp::Node {
     void dispatch_gimbal();
     void dispatch_fire();
     bool is_autoaim_valid() const;
+    bool is_autoaim_valid_nav() const;
     bool is_nav_vel_valid() const;
+    bool is_gimbal_scan_valid() const;
+    void publish_auto_aim_switch();
 
     // ========== 控制器 ==========
     std::shared_ptr<ChassisController> chassis_;
@@ -104,9 +110,13 @@ class Hub : public rclcpp::Node {
     sp_msgs::msg::AutoAimCommandMsg::SharedPtr autoaim_cmd_;
     bool autoaim_valid_{false};
     double autoaim_last_time_{0.0};
-    geometry_msgs::msg::Twist::SharedPtr nav_cmd_vel_;
+    geometry_msgs::msg::TwistStamped::SharedPtr nav_cmd_vel_;
     rclcpp::Time nav_vel_last_time_{0, 0, RCL_ROS_TIME};
     double nav_vel_timeout_s_{0.2};
+
+    pb_rm_interfaces::msg::GimbalCmd::SharedPtr gimbal_scan_cmd_;
+    rclcpp::Time gimbal_scan_last_time_{0, 0, RCL_ROS_TIME};
+    double gimbal_scan_timeout_s_{0.5};
 
     RefereeConstraints referee_;
     bool game_started_{false};
@@ -123,10 +133,14 @@ class Hub : public rclcpp::Node {
     // ========== 订阅者 ==========
     rclcpp::Subscription<msg::UnifiedInput>::SharedPtr sub_vtm_;
     rclcpp::Subscription<msg::UnifiedInput>::SharedPtr sub_ndj_;
-    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_nav_vel_;
+    rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr sub_nav_vel_;
     rclcpp::Subscription<sp_msgs::msg::AutoAimCommandMsg>::SharedPtr sub_autoaim_;
+    rclcpp::Subscription<pb_rm_interfaces::msg::GimbalCmd>::SharedPtr sub_gimbal_scan_;
     rclcpp::Subscription<dji_referee_protocol::msg::Constraints>::SharedPtr sub_referee_;
     rclcpp::Subscription<dji_referee_protocol::msg::GameStatus>::SharedPtr sub_game_status_;
+
+    // ========== 发布者 ==========
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_auto_aim_switch_;
 
     // ========== 定时器 ==========
     rclcpp::TimerBase::SharedPtr timer_;

@@ -20,6 +20,7 @@
   <depend>rcl_interfaces</depend>
   <depend>sp_msgs</depend>
   <depend>dji_referee_protocol</depend>
+  <depend>pb_rm_interfaces</depend>
 
   <test_depend>ament_copyright</test_depend>    <!-- 保留：检查版权声明（通用） -->
   <test_depend>ament_lint_auto</test_depend>    <!-- 核心：自动查找所有 lint 测试 -->

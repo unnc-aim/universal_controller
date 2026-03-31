@@ -80,7 +80,8 @@ enum class SubsystemInput : uint8_t {
     NONE = 0,      ///< 无输入（控制器应保持安全状态）
     RC = 1,        ///< 遥控器输入
     AUTOAIM = 2,   ///< 自瞄系统输入
-    NAVIGATION = 3 ///< 导航速度输入（/cmd_vel）
+    NAVIGATION = 3, ///< 导航速度输入（/cmd_vel）
+    SCAN = 4       ///< 云台扫描输入（行为树速度扫描）
 };
 
 /**
@@ -96,6 +97,8 @@ inline std::string subsystem_input_to_string(SubsystemInput input) {
             return "AUTOAIM";
         case SubsystemInput::NAVIGATION:
             return "NAVIGATION";
+        case SubsystemInput::SCAN:
+            return "SCAN";
         default:
             return "UNKNOWN";
     }
@@ -150,6 +153,15 @@ struct GimbalCommand {
     double yaw_rad{0.0};     ///< 目标 Yaw 角度（弧度）
     bool from_action{false}; ///< 是否来自 Action Server
     bool absolute{true};     ///< true=绝对角度, false=增量
+
+    // 扫描模式（速度扫描，由行为树驱动）
+    bool scan_mode{false};       ///< 是否为扫描模式
+    double scan_vel_yaw{0.0};    ///< Yaw 扫描速度 (rad/s)
+    double scan_vel_pitch{0.0};  ///< Pitch 扫描速度 (rad/s)
+    double scan_yaw_min{-M_PI};  ///< Yaw 扫描下限 (rad)
+    double scan_yaw_max{M_PI};   ///< Yaw 扫描上限 (rad)
+    double scan_pitch_min{0.0};  ///< Pitch 扫描下限 (rad)
+    double scan_pitch_max{0.0};  ///< Pitch 扫描上限 (rad)
 
     GimbalCommand() = default;
     GimbalCommand(double pitch, double yaw, bool action = false, bool abs = true)

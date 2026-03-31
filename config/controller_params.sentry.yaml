@@ -14,6 +14,8 @@
       autoaim_cmd: '/sp_vision/autoaim_command'
       referee_constraints: '/referee/parsed/common/constraints'
       referee_game_status: '/referee/common/game_status'
+      auto_aim_switch: '/auto_aim_switch'
+      gimbal_scan_cmd: '/gimbal_scan_cmd'
 
     # ========== 电机类型配置 ==========
     motor_type:

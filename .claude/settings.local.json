@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/robert/Documents/GitHub/AIM-EC/26Sentry_ws -type f -name *.idl -o -name Armors.msg -o -name Target.msg)",
+      "Bash(find /Users/robert/Documents/GitHub/AIM-EC/26Sentry_ws -type d -name *interfaces*)",
+      "WebSearch",
+      "Bash(find /Users/robert/Documents/GitHub/AIM-EC/26Sentry_ws/.git/modules -name *auto_aim* -type d)"
+    ]
+  }
+}

@@ -66,10 +66,11 @@ void GimbalController::set_command(const GimbalCommand &cmd) {
 }
 
 void GimbalController::update(double dt) {
-    (void)dt;
     if (!command_valid_) {
         return;
     }
+
+    dt_ = dt;
 
     // 计算控制
     compute_pitch_control();
@@ -101,7 +102,19 @@ void GimbalController::cb_yaw_feedback(const custom_msgs::msg::ReadLkMotor::Shar
 }
 
 void GimbalController::compute_pitch_control() {
-    if (command_.absolute) {
+    if (command_.scan_mode) {
+        // 扫描模式：速度驱动，到达限位反转
+        target_pitch_deg_ += command_.scan_vel_pitch * scan_direction_pitch_ * dt_ * (180.0 / M_PI);
+        double pitch_min_deg = command_.scan_pitch_min * (180.0 / M_PI);
+        double pitch_max_deg = command_.scan_pitch_max * (180.0 / M_PI);
+        if (target_pitch_deg_ >= pitch_max_deg) {
+            target_pitch_deg_ = pitch_max_deg;
+            scan_direction_pitch_ = -1.0;
+        } else if (target_pitch_deg_ <= pitch_min_deg) {
+            target_pitch_deg_ = pitch_min_deg;
+            scan_direction_pitch_ = 1.0;
+        }
+    } else if (command_.absolute) {
         // 绝对目标（自瞄/Action）
         target_pitch_deg_ = command_.pitch_deg;
     } else {
@@ -114,7 +127,17 @@ void GimbalController::compute_pitch_control() {
 }
 
 void GimbalController::compute_yaw_control() {
-    if (command_.absolute) {
+    if (command_.scan_mode) {
+        // 速度扫描模式：按速度移动，到达限幅后反转方向
+        target_yaw_rad_ += command_.scan_vel_yaw * scan_direction_yaw_ * dt_;
+        if (target_yaw_rad_ >= command_.scan_yaw_max) {
+            target_yaw_rad_ = command_.scan_yaw_max;
+            scan_direction_yaw_ = -1.0;
+        } else if (target_yaw_rad_ <= command_.scan_yaw_min) {
+            target_yaw_rad_ = command_.scan_yaw_min;
+            scan_direction_yaw_ = 1.0;
+        }
+    } else if (command_.absolute) {
         // 绝对目标（自瞄/Action）
         target_yaw_rad_ = std::atan2(std::sin(command_.yaw_rad), std::cos(command_.yaw_rad));
     } else {

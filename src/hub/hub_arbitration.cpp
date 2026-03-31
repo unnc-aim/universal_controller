@@ -18,6 +18,16 @@ bool Hub::is_nav_vel_valid() const {
     return (this->now() - nav_vel_last_time_).seconds() < nav_vel_timeout_s_;
 }
 
+bool Hub::is_gimbal_scan_valid() const {
+    if (!gimbal_scan_cmd_) {
+        return false;
+    }
+    if (gimbal_scan_last_time_.nanoseconds() == 0) {
+        return false;
+    }
+    return (this->now() - gimbal_scan_last_time_).seconds() < gimbal_scan_timeout_s_;
+}
+
 ArbitrationResult Hub::arbitrate() {
     ArbitrationResult result;
 
@@ -37,11 +47,23 @@ ArbitrationResult Hub::arbitrate() {
         result.chassis = SubsystemInput::RC;
     }
 
-    // --- 云台：Autoaim > RC ---
-    if (is_autoaim_valid()) {
-        result.gimbal = SubsystemInput::AUTOAIM;
+    // --- 云台仲裁 ---
+    if (unified_input_->navigation_enabled) {
+        // 导航模式：自瞄 > 扫描（不允许 RC 控制）
+        if (is_autoaim_valid_nav()) {
+            result.gimbal = SubsystemInput::AUTOAIM;
+        } else if (is_gimbal_scan_valid()) {
+            result.gimbal = SubsystemInput::SCAN;
+        } else {
+            result.gimbal = SubsystemInput::SCAN; // 默认扫描
+        }
     } else {
-        result.gimbal = SubsystemInput::RC;
+        // 非导航模式：自瞄 > RC
+        if (is_autoaim_valid()) {
+            result.gimbal = SubsystemInput::AUTOAIM;
+        } else {
+            result.gimbal = SubsystemInput::RC;
+        }
     }
 
     // --- 发射：RC ---
@@ -54,6 +76,17 @@ bool Hub::is_autoaim_valid() const {
     if (!unified_input_ || !unified_input_->autoaim_enabled) {
         return false;
     }
+    if (!autoaim_cmd_ || !autoaim_cmd_->control) {
+        return false;
+    }
+    double autoaim_timeout = 0.2;
+    bool autoaim_fresh = (this->now().seconds() - autoaim_last_time_) < autoaim_timeout;
+    return autoaim_fresh;
+}
+
+bool Hub::is_autoaim_valid_nav() const {
+    // 导航模式下的自瞄有效性：不需要 RC 的 autoaim_enabled 标志
+    // 只要自瞄指令有效即自动启用
     if (!autoaim_cmd_ || !autoaim_cmd_->control) {
         return false;
     }
@@ -96,11 +129,11 @@ void Hub::dispatch_chassis() {
             break;
         }
         case SubsystemInput::NAVIGATION: {
-            // 使用导航速度指令
+            // 使用导航速度指令（TwistStamped）
             ChassisCommand cmd;
-            cmd.vx_gimbal = nav_cmd_vel_->linear.x * 1348;
-            cmd.vy_gimbal = nav_cmd_vel_->linear.y * -1348;
-            cmd.wz = nav_cmd_vel_->angular.z;
+            cmd.vx_gimbal = nav_cmd_vel_->twist.linear.x * 1348;
+            cmd.vy_gimbal = nav_cmd_vel_->twist.linear.y * -1348;
+            cmd.wz = nav_cmd_vel_->twist.angular.z;
             cmd.spin_mode = false;
             cmd.spin_speed = 0.0;
             chassis_->set_command(cmd);
@@ -129,6 +162,26 @@ void Hub::dispatch_gimbal() {
             gimbal_->set_command(cmd);
             break;
         }
+        case SubsystemInput::SCAN: {
+            GimbalCommand cmd;
+            cmd.scan_mode = true;
+            if (gimbal_scan_cmd_) {
+                cmd.scan_vel_yaw = static_cast<double>(gimbal_scan_cmd_->velocity.yaw);
+                cmd.scan_vel_pitch = static_cast<double>(gimbal_scan_cmd_->velocity.pitch);
+                cmd.scan_yaw_min = static_cast<double>(gimbal_scan_cmd_->velocity.yaw_min_range);
+                cmd.scan_yaw_max = static_cast<double>(gimbal_scan_cmd_->velocity.yaw_max_range);
+                cmd.scan_pitch_min = static_cast<double>(gimbal_scan_cmd_->velocity.pitch_min_range);
+                cmd.scan_pitch_max = static_cast<double>(gimbal_scan_cmd_->velocity.pitch_max_range);
+            } else {
+                // 默认扫描参数
+                cmd.scan_vel_yaw = 1.0;
+                cmd.scan_vel_pitch = 0.0;
+                cmd.scan_yaw_min = -M_PI;
+                cmd.scan_yaw_max = 0.0;
+            }
+            gimbal_->set_command(cmd);
+            break;
+        }
         default:
             break;
     }
@@ -148,6 +201,22 @@ void Hub::dispatch_fire() {
         default:
             break;
     }
+}
+
+void Hub::publish_auto_aim_switch() {
+    std_msgs::msg::Int32 msg;
+    if (arbitration_.emergency_stop) {
+        msg.data = 0;
+    } else if (unified_input_ && unified_input_->navigation_enabled) {
+        // 导航模式：自动开启自瞄
+        msg.data = 1;
+    } else if (unified_input_ && unified_input_->autoaim_enabled) {
+        // 非导航模式：跟随 RC 自瞄开关
+        msg.data = 1;
+    } else {
+        msg.data = 0;
+    }
+    pub_auto_aim_switch_->publish(msg);
 }
 
 } // namespace universal_controller
