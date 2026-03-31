@@ -53,7 +53,7 @@
         power_K_max: 0.1
         power_filter_alpha: 0.1
         # TODO
-        topic_supercap: '/ecat/sn2228292/app13/read'
+        topic_supercap_read: '/ecat/supercap/read'
 
       gimbal:
         pitch_center_ecd: 5360

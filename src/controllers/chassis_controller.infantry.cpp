@@ -46,6 +46,17 @@ void ChassisController::init(rclcpp::Node *node, const ConfigLoader &cfg) {
         config_.topic_yaw_read, qos_best_effort_,
         std::bind(&ChassisController::cb_yaw, this, std::placeholders::_1));
 
+
+        if (config_.power_limit_enabled && !config_.topic_supercap.empty()) {
+        sub_supercap_ = node->create_subscription<custom_msgs::msg::ReadSuperCap>(
+            config_.topic_supercap, qos_best_effort_,
+            std::bind(&ChassisController::cb_supercap, this, std::placeholders::_1));
+        k_dynamic_ = config_.power_K;
+        power_limit_ = config_.power_limit_default;
+        RCLCPP_INFO(node->get_logger(), "ChassisController power limiting enabled (R=%.4f, K=%.4f, P0=%.4f)",
+                    config_.power_R, config_.power_K, config_.power_P0);
+    }
+
     set_initialized(true);
     RCLCPP_INFO(node->get_logger(), "ChassisController (Infantry) initialized (DJI motors)");
     RCLCPP_INFO(node->get_logger(), "Chassis yaw_center_ecd=%d", yaw_center_ecd_);
@@ -57,7 +68,9 @@ void ChassisController::set_command(const ChassisCommand &cmd) {
 }
 
 void ChassisController::set_power_limit(double limit) {
-    (void)limit; // 步兵不使用功率限制
+    if (limit > 0.0) {
+        power_limit_ = limit;
+    }
 }
 
 void ChassisController::update(double dt) {
@@ -160,6 +173,64 @@ void ChassisController::cb_steer_dji(const custom_msgs::msg::ReadDJIMotor::Share
     current_steer_ecds_[1] = msg->motor4_ecd;
     current_steer_ecds_[2] = msg->motor3_ecd;
     current_steer_ecds_[3] = msg->motor2_ecd;
+}
+
+void ChassisController::cb_supercap(const custom_msgs::msg::ReadSuperCap::SharedPtr msg){
+    supercap_online_ = (msg->online != 0);
+    supercap_chassis_only_power_ = static_cast<double>(msg->chassis_only_power);
+}
+
+void ChassisController::apply_power_limit(std::array<int16_t, 4> &drive_currents) {
+        // 1. 用实测功率在线标定 K_dynamic
+    if (supercap_online_ && supercap_chassis_only_power_ > 0.0) {
+        double last_i2 = 0.0, last_wi = 0.0;
+        for (int i = 0; i < 4; ++i) {
+            double I = static_cast<double>(last_drive_currents_[i]);
+            last_i2 += I * I;
+            last_wi += I * current_drive_speeds_[i];
+        }
+        if (std::abs(last_wi) > 1.0) {
+            // 从实测功率反推 K: P = R*ΣI² + K*Σ(ω*I) + P0
+            double k_measured = (supercap_chassis_only_power_ - config_.power_P0 - config_.power_R * last_i2) / last_wi;
+            k_dynamic_ = k_dynamic_ * (1.0 - config_.power_filter_alpha) + k_measured * config_.power_filter_alpha;
+            k_dynamic_ = clamp(k_dynamic_, config_.power_K_min, config_.power_K_max);
+        }
+    }
+
+    // 2. 预测发送功率: P = R*ΣI² + K*Σ(ω*I) + P0
+    double i2_sum = 0.0, wi_sum = 0.0;
+    for (int i = 0; i < 4; ++i) {
+        double I = static_cast<double>(drive_currents[i]);
+        i2_sum += I * I;
+        wi_sum += I * current_drive_speeds_[i];
+    }
+
+    double a = config_.power_R * i2_sum;
+    double b = k_dynamic_ * wi_sum;
+    double c = config_.power_P0;
+    double predicted = a + b + c;
+
+    // 3. 超功率则求解缩放因子 k_c
+    if (predicted > power_limit_ && power_limit_ > 0.0) {
+        double k_c = 1.0;
+        if (a > 1e-9) {
+            double disc = b * b - 4.0 * a * (c - power_limit_);
+            if (disc < 0.0) {
+                k_c = clamp(-b / (2.0 * a), 0.0, 1.0);
+            } else {
+                double sqrt_disc = std::sqrt(disc);
+                k_c = clamp((-b + sqrt_disc) / (2.0 * a), 0.0, 1.0);
+            }
+        }
+        for (int i = 0; i < 4; ++i) {
+            drive_currents[i] = static_cast<int16_t>(static_cast<double>(drive_currents[i]) * k_c);
+        }
+    }
+
+    // 4. 记录本轮电流，用于下一周期标定
+    for (int i = 0; i < 4; ++i) {
+        last_drive_currents_[i] = drive_currents[i];
+    }
 }
 
 void ChassisController::cb_yaw(const custom_msgs::msg::ReadLkMotor::SharedPtr msg) {

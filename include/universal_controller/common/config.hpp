@@ -192,6 +192,7 @@ struct ChassisConfig {
     double power_K_max{0.1};
     double power_filter_alpha{0.1};
     std::string topic_supercap;
+    std::string topic_supercap_write;
 
     /**
      * @brief 从参数服务器加载
@@ -228,6 +229,7 @@ struct ChassisConfig {
         power_K_max = cfg.get_prefixed_double("controllers.chassis", "power_K_max", power_K_max);
         power_filter_alpha = cfg.get_prefixed_double("controllers.chassis", "power_filter_alpha", power_filter_alpha);
         topic_supercap = cfg.get_prefixed_string("controllers.chassis", "topic_supercap", topic_supercap);
+        topic_supercap_write = cfg.get_prefixed_string("controllers.chassis", "topic_supercap_read", topic_supercap_write);
     }
 };
 

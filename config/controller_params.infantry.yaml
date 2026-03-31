@@ -37,8 +37,18 @@
         spin_speed_default: 3000.0
         spin_speed_min: 800.0
         spin_speed_max: 6500.0
-        # 步兵不使用功率限制
+        power_limit_enabled: true
         power_limit_enabled: false
+        power_limit_default: 80.0
+        power_R: 0.7708
+        power_K: 0.0131
+        power_P0: 2.4565
+        power_K_min: 0.001
+        power_K_max: 0.1
+        power_filter_alpha: 0.1
+
+        topic_supercap_read: 'ecat/suprecap/read'
+        topic_supercap_write: 'ecat/supercap/write'
 
       gimbal:
         pitch_center_ecd: 4600
