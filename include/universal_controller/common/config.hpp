@@ -228,8 +228,8 @@ struct ChassisConfig {
         power_K_min = cfg.get_prefixed_double("controllers.chassis", "power_K_min", power_K_min);
         power_K_max = cfg.get_prefixed_double("controllers.chassis", "power_K_max", power_K_max);
         power_filter_alpha = cfg.get_prefixed_double("controllers.chassis", "power_filter_alpha", power_filter_alpha);
-        topic_supercap = cfg.get_prefixed_string("controllers.chassis", "topic_supercap", topic_supercap);
-        topic_supercap_write = cfg.get_prefixed_string("controllers.chassis", "topic_supercap_read", topic_supercap_write);
+        topic_supercap = cfg.get_prefixed_string("controllers.chassis", "topic_supercap_read", topic_supercap);
+        topic_supercap_write = cfg.get_prefixed_string("controllers.chassis", "topic_supercap_write", topic_supercap_write);
     }
 };
 

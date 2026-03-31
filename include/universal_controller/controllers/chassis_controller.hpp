@@ -72,6 +72,7 @@ class ChassisController : public BaseController {
     void publish_dji_commands();
     void publish_lk_commands();
     void apply_power_limit(std::array<int16_t, 4> &drive_currents);
+    void publish_supercap_command(int max_watt, int allow_watt);
 
     // 坐标转换
     void transform_to_chassis_frame(double vx_g, double vy_g, double &vx_c, double &vy_c) const;
@@ -124,6 +125,7 @@ class ChassisController : public BaseController {
     rclcpp::Publisher<custom_msgs::msg::WriteDJIMotor>::SharedPtr pub_steer_dji_;
     rclcpp::Publisher<custom_msgs::msg::WriteLkMotorBroadcastCurrentControl>::SharedPtr pub_drive_lk_;
     rclcpp::Publisher<custom_msgs::msg::WriteLkMotorBroadcastCurrentControl>::SharedPtr pub_steer_lk_;
+    rclcpp::Publisher<custom_msgs::msg::WriteSuperCap>::SharedPtr pub_supercap_;
 
     rclcpp::QoS qos_best_effort_{rclcpp::QoS(1).best_effort()};
 };

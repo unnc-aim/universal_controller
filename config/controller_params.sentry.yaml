@@ -54,6 +54,7 @@
         power_filter_alpha: 0.1
         # TODO
         topic_supercap_read: '/ecat/supercap/read'
+        topic_supercap_write: '/ecat/supercap/write'
 
       gimbal:
         pitch_center_ecd: 5360

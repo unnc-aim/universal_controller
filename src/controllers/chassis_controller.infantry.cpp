@@ -46,11 +46,15 @@ void ChassisController::init(rclcpp::Node *node, const ConfigLoader &cfg) {
         config_.topic_yaw_read, qos_best_effort_,
         std::bind(&ChassisController::cb_yaw, this, std::placeholders::_1));
 
-
+    // Super Cao
         if (config_.power_limit_enabled && !config_.topic_supercap.empty()) {
         sub_supercap_ = node->create_subscription<custom_msgs::msg::ReadSuperCap>(
             config_.topic_supercap, qos_best_effort_,
             std::bind(&ChassisController::cb_supercap, this, std::placeholders::_1));
+
+        pub_supercap_ = node->create_publisher<custom_msgs::msg::WriteSuperCap>(
+            config_.topic_supercap_write, qos_best_effort_);
+
         k_dynamic_ = config_.power_K;
         power_limit_ = config_.power_limit_default;
         RCLCPP_INFO(node->get_logger(), "ChassisController power limiting enabled (R=%.4f, K=%.4f, P0=%.4f)",
@@ -79,6 +83,14 @@ void ChassisController::update(double dt) {
     }
     compute_control(dt);
     publish_dji_commands();
+
+    if (config_.power_limit_enabled && pub_supercap_) {
+        // 裁判功率限制剩余功率可用于超级电容充电
+        const double charge_available = power_limit_ - supercap_chassis_only_power_;
+        const int allow_charge = std::max(0, static_cast<int>(std::floor(charge_available)));
+        const int max_charge = std::max(0, static_cast<int>(std::floor(power_limit_)));
+        publish_supercap_command(max_charge, allow_charge);
+    }
 }
 
 void ChassisController::stop() {
@@ -231,6 +243,19 @@ void ChassisController::apply_power_limit(std::array<int16_t, 4> &drive_currents
     for (int i = 0; i < 4; ++i) {
         last_drive_currents_[i] = drive_currents[i];
     }
+}
+
+void ChassisController::publish_supercap_command(int max_watt, int allow_watt) {
+    if (!pub_supercap_) {
+        return;
+    }
+
+    auto msg = custom_msgs::msg::WriteSuperCap();
+    msg.cap_enable = 1;
+    msg.do_charge = (allow_watt > 0) ? 1 : 0;
+    msg.max_charge_power = static_cast<uint8_t>(clamp(max_watt, 0, 255));
+    msg.allow_charge_power = static_cast<uint8_t>(clamp(allow_watt, 0, 255));
+    pub_supercap_->publish(msg);
 }
 
 void ChassisController::cb_yaw(const custom_msgs::msg::ReadLkMotor::SharedPtr msg) {
