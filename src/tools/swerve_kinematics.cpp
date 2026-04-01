@@ -27,7 +27,7 @@ std::pair<std::array<double, 4>, std::array<uint16_t, 4>> SwerveKinematics::calc
     std::array<double, 4> drive_speeds{};
     std::array<uint16_t, 4> steer_targets{};
 
-    wz *= 0.9;
+    wz *= 0.85;
     // 对齐旧 sentry_controller 的 Swerve 逆解：A/B/C/D
     double A = vy - wz * (wheel_base_ / geometry_factor_);
     double B = vy + wz * (wheel_base_ / geometry_factor_);

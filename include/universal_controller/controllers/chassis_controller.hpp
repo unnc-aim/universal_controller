@@ -22,6 +22,7 @@
 #include "custom_msgs/msg/read_super_cap.hpp"
 #include "custom_msgs/msg/write_dji_motor.hpp"
 #include "custom_msgs/msg/write_lk_motor_broadcast_current_control.hpp"
+#include "custom_msgs/msg/write_super_cap.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
 #include <array>

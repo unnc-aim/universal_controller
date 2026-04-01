@@ -176,6 +176,7 @@ void ChassisController::compute_control(double dt) {
 
     // 2. 小陀螺模式速度抑制
     double wz = command_.wz;
+    
     if (command_.spin_mode && std::abs(command_.wz) > 10.0) {
         wz = compute_spin_suppression(vx_c, vy_c, command_.wz);
     }
