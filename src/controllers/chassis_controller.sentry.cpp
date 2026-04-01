@@ -147,6 +147,13 @@ void ChassisController::stop() {
         pub_drive_lk_->publish(msg);
         pub_steer_lk_->publish(msg);
     }
+
+    if (config_.power_limit_enabled && pub_supercap_) {
+        const double charge_available = power_limit_ - supercap_chassis_only_power_;
+        const int allow_charge = std::max(0, static_cast<int>(std::floor(charge_available)));
+        const int max_charge = std::max(0, static_cast<int>(std::floor(power_limit_)));
+        publish_supercap_command(max_charge, allow_charge);
+    }
 }
 
 void ChassisController::compute_control(double dt) {
