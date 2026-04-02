@@ -165,7 +165,7 @@ void Hub::dispatch_gimbal() {
         case SubsystemInput::SCAN: {
             GimbalCommand cmd;
             cmd.scan_mode = true;
-            if (gimbal_scan_cmd_) {
+            if (is_gimbal_scan_valid() && gimbal_scan_cmd_) {
                 cmd.scan_vel_yaw = static_cast<double>(gimbal_scan_cmd_->velocity.yaw);
                 cmd.scan_vel_pitch = static_cast<double>(gimbal_scan_cmd_->velocity.pitch);
                 cmd.scan_yaw_min = static_cast<double>(gimbal_scan_cmd_->velocity.yaw_min_range);
