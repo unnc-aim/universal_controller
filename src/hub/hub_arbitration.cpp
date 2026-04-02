@@ -134,8 +134,8 @@ void Hub::dispatch_chassis() {
             cmd.vx_gimbal = nav_cmd_vel_->twist.linear.x * 1348;
             cmd.vy_gimbal = nav_cmd_vel_->twist.linear.y * -1348;
             cmd.wz = nav_cmd_vel_->twist.angular.z;
-            cmd.spin_mode = false;
-            cmd.spin_speed = 0.0;
+            cmd.spin_mode = (std::abs(nav_spin_speed_) > 1e-3f);
+            cmd.spin_speed = static_cast<double>(nav_spin_speed_);
             chassis_->set_command(cmd);
             break;
         }
@@ -204,12 +204,15 @@ void Hub::dispatch_fire() {
 }
 
 void Hub::publish_auto_aim_switch() {
+    // 导航模式下由行为树（PublishAutoAim）全权管理 auto_aim_switch，
+    // Hub 不再发布，避免双发布者状态冲突。
+    if (unified_input_ && unified_input_->navigation_enabled) {
+        return;
+    }
+
     std_msgs::msg::Int32 msg;
     if (arbitration_.emergency_stop) {
         msg.data = 0;
-    } else if (unified_input_ && unified_input_->navigation_enabled) {
-        // 导航模式：自动开启自瞄
-        msg.data = 1;
     } else if (unified_input_ && unified_input_->autoaim_enabled) {
         // 非导航模式：跟随 RC 自瞄开关
         msg.data = 1;

@@ -22,6 +22,7 @@
 #include "universal_controller/controllers/fire_controller.hpp"
 #include "universal_controller/controllers/gimbal_controller.hpp"
 
+#include "example_interfaces/msg/float32.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "sp_msgs/msg/auto_aim_command_msg.hpp"
 #include "std_msgs/msg/int32.hpp"
@@ -75,6 +76,7 @@ class Hub : public rclcpp::Node {
     void cb_gimbal_scan(const pb_rm_interfaces::msg::GimbalCmd::SharedPtr msg);
     void cb_referee_constraints(const dji_referee_protocol::msg::Constraints::SharedPtr msg);
     void cb_referee_game_status(const dji_referee_protocol::msg::GameStatus::SharedPtr msg);
+    void cb_cmd_spin(const example_interfaces::msg::Float32::SharedPtr msg);
 
     // ========== 模式仲裁 ==========
     ArbitrationResult arbitrate();
@@ -118,6 +120,8 @@ class Hub : public rclcpp::Node {
     rclcpp::Time gimbal_scan_last_time_{0, 0, RCL_ROS_TIME};
     double gimbal_scan_timeout_s_{0.5};
 
+    float nav_spin_speed_{0.0f};
+
     RefereeConstraints referee_;
     bool game_started_{false};
 
@@ -138,6 +142,7 @@ class Hub : public rclcpp::Node {
     rclcpp::Subscription<pb_rm_interfaces::msg::GimbalCmd>::SharedPtr sub_gimbal_scan_;
     rclcpp::Subscription<dji_referee_protocol::msg::Constraints>::SharedPtr sub_referee_;
     rclcpp::Subscription<dji_referee_protocol::msg::GameStatus>::SharedPtr sub_game_status_;
+    rclcpp::Subscription<example_interfaces::msg::Float32>::SharedPtr sub_cmd_spin_;
 
     // ========== 发布者 ==========
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_auto_aim_switch_;

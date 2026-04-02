@@ -23,6 +23,10 @@ void Hub::cb_gimbal_scan(const pb_rm_interfaces::msg::GimbalCmd::SharedPtr msg) 
     gimbal_scan_last_time_ = this->now();
 }
 
+void Hub::cb_cmd_spin(const example_interfaces::msg::Float32::SharedPtr msg) {
+    nav_spin_speed_ = msg->data;
+}
+
 void Hub::cb_referee_constraints(const dji_referee_protocol::msg::Constraints::SharedPtr msg) {
     referee_.heat = msg->shooter_heat;
     referee_.heat_limit = msg->heat_limit;

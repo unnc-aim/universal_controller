@@ -26,6 +26,7 @@ find_package(sp_msgs REQUIRED)
 find_package(dji_referee_protocol REQUIRED)
 find_package(pb_rm_interfaces REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(example_interfaces REQUIRED)
 
 # ========== 消息生成 ==========
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -97,6 +98,7 @@ ament_target_dependencies(universal_controller_node
   sp_msgs
   dji_referee_protocol
   pb_rm_interfaces
+  example_interfaces
 )
 
 rosidl_get_typesupport_target(universal_controller_node_typesupport

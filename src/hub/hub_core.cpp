@@ -70,6 +70,12 @@ Hub::Hub(std::shared_ptr<ChassisController> chassis, std::shared_ptr<GimbalContr
     pub_auto_aim_switch_ = this->create_publisher<std_msgs::msg::Int32>(
         topic_auto_aim_switch, qos_best_effort_);
 
+    // 订阅小陀螺速度指令（与 fake_vel_transform 共享话题，用于导航模式 spin_mode 判断）
+    std::string topic_cmd_spin = config_loader_.get_string("topics.cmd_spin", "/cmd_spin");
+    sub_cmd_spin_ = this->create_subscription<example_interfaces::msg::Float32>(
+        topic_cmd_spin, qos_best_effort_,
+        std::bind(&Hub::cb_cmd_spin, this, std::placeholders::_1));
+
     // 订阅裁判系统
     std::string topic_referee = config_loader_.get_string("topics.referee_constraints", "/referee/parsed/common/constraints");
     sub_referee_ = this->create_subscription<dji_referee_protocol::msg::Constraints>(
@@ -104,6 +110,7 @@ void Hub::declare_parameters() {
     this->declare_parameter("topics.nav_cmd_vel", "/cmd_vel");
     this->declare_parameter("topics.auto_aim_switch", "/auto_aim_switch");
     this->declare_parameter("topics.gimbal_scan_cmd", "/gimbal_scan_cmd");
+    this->declare_parameter("topics.cmd_spin", "/cmd_spin");
     this->declare_parameter("gimbal_scan_timeout_s", 0.5);
 
     // RC 融合参数
