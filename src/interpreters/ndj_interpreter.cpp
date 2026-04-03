@@ -310,7 +310,7 @@ void NDJInterpreter::process_input() {
     if (trigger_definition_.loaded) {
         unified_output_.autoaim_enabled = autoaim_state_ || km_out.mouse_autoaim;
         unified_output_.burst_mode = burst_mode_;
-        unified_output_.fire_trigger = feeder_state_ || burst_mode_ || km_out.mouse_fire;
+        unified_output_.fire_trigger = feeder_state_ || km_out.mouse_fire;
         unified_output_.friction_on = friction_state_;
         unified_output_.friction_speed = friction_state_ ? 6500.0 : 0.0;
     } else {

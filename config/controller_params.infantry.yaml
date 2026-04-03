@@ -37,6 +37,8 @@
         spin_speed_default: 3000.0
         spin_speed_min: 800.0
         spin_speed_max: 6500.0
+        spin_compensation_k: 0.00015  # 小陀螺模式下的平移相位补偿系数（解决平移倾斜问题）
+        spin_compensation_k: 0.00015  # 小陀螺模式下的平移相位补偿系数（解决平移倾斜问题）
         power_limit_enabled: true
         power_limit_enabled: false
         power_limit_default: 80.0

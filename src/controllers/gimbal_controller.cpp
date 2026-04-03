@@ -149,7 +149,7 @@ void GimbalController::compute_yaw_control() {
 
 void GimbalController::publish_commands() {
     // ========== Pitch 控制 (DJI 电机位置模式) ==========
-    double current_pitch_deg = imu_pitch_rad_ * (180.0 / M_PI);
+    double current_pitch_deg = -imu_pitch_rad_ * (180.0 / M_PI);
     double pitch_error_deg = target_pitch_deg_ - current_pitch_deg;
 
     // 转换为编码器值 (8192 units per 360 degrees)
@@ -166,8 +166,10 @@ void GimbalController::publish_commands() {
     double pos_error = target_yaw_rad_ - imu_yaw_rad_;
     pos_error = std::atan2(std::sin(pos_error), std::cos(pos_error)); // 归一化
 
-    // 前馈角速度
-    double target_ang_vel = -command_.yaw_rad * (10.0 * M_PI * 0.001);
+    // 前馈角速度（仅在 RC 增量模式下有效，绝对/扫描模式为 0）
+    double target_ang_vel = (!command_.absolute && !command_.scan_mode)
+        ? (-command_.yaw_rad * (10.0 * M_PI * 0.001))
+        : 0.0;
 
     // D 项输入
     double d_input = target_ang_vel - imu_gyro_z_;

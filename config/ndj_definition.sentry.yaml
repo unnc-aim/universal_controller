@@ -25,8 +25,8 @@ ndj_trigger_def:
   #   spin_control: [accelerate, decelerate] # 小陀螺速度控制
 
   # 左 trigger: 3 个停靠点
-  # 上=1: 自瞄开
-  # 中=3: 自瞄关
+  # 上=1: 导航模式（自瞄开）
+  # 中=3: 手动模式（自瞄关）
   # 下=2: 急停
   left_switch:
     dock_points:
@@ -49,10 +49,10 @@ ndj_trigger_def:
           spin_mode: {toggle: true}
 
   # 右 trigger: 3 个停靠点
-  # 上: 导航+行为树，开供弹
-  # 中: 导航+行为树，开摩擦轮
-  # 下: 全关
-  # transitions: 下->中时，供弹切换（连发/单发）
+  # 上: 导航+行为树，摩擦轮+供弹均开
+  # 中: 导航+行为树，摩擦轮开、供弹关
+  # 下: 全关（导航/行为树/摩擦/供弹均关）
+  # transitions: 下->中时，连发/单发切换
   right_switch:
     dock_points:
       up:
@@ -73,6 +73,7 @@ ndj_trigger_def:
           behavior_tree_topic: {off: true}
           friction_wheel: {off: true}
           feeder: {off: true}
+          spin_mode: {off: true}
 
     transitions:
       down_to_mid:

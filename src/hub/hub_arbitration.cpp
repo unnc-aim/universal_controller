@@ -49,13 +49,14 @@ ArbitrationResult Hub::arbitrate() {
 
     // --- 云台仲裁 ---
     if (unified_input_->navigation_enabled) {
-        // 导航模式：自瞄 > 扫描（不允许 RC 控制）
-        if (is_autoaim_valid_nav()) {
+        // 导航模式：只有 auto_aim_switch 允许（nav_fire_allowed_）时才启用自瞄，
+        // 否则一律走扫描路径，保证导航侧云台旋转优先
+        if (nav_fire_allowed_ && is_autoaim_valid_nav()) {
             result.gimbal = SubsystemInput::AUTOAIM;
         } else if (is_gimbal_scan_valid()) {
             result.gimbal = SubsystemInput::SCAN;
         } else {
-            result.gimbal = SubsystemInput::SCAN; // 默认扫描
+            result.gimbal = SubsystemInput::SCAN;
         }
     } else {
         // 非导航模式：自瞄 > RC
@@ -112,30 +113,44 @@ void Hub::dispatch_commands() {
 }
 
 void Hub::dispatch_chassis() {
-    // 传递裁判系统功率上限
+    // 传递裁判系统功率数据
     if (referee_.power_limit > 0.0) {
         chassis_->set_power_limit(referee_.power_limit);
     }
+    chassis_->set_chassis_power(referee_.power);
+
+    bool ext_spin = (std::abs(nav_spin_speed_) > 1e-3f);
+    // 内部小陀螺速度（编码器单位 ~3000），由 RC 解释器维护
+    double internal_spin_spd = unified_input_->spin_speed;
 
     switch (arbitration_.chassis) {
         case SubsystemInput::RC: {
             ChassisCommand cmd;
             cmd.vx_gimbal = unified_input_->vx;
             cmd.vy_gimbal = unified_input_->vy;
-            cmd.wz = unified_input_->wz;
-            cmd.spin_mode = unified_input_->spin_mode;
-            cmd.spin_speed = unified_input_->spin_speed;
+            if (ext_spin) {
+                cmd.spin_mode = true;
+                cmd.wz = internal_spin_spd;
+                cmd.spin_speed = internal_spin_spd;
+            } else if (unified_input_->spin_mode) {
+                cmd.spin_mode = true;
+                cmd.wz = unified_input_->wz;
+                cmd.spin_speed = internal_spin_spd;
+            } else {
+                cmd.spin_mode = false;
+                cmd.wz = unified_input_->wz;
+                cmd.spin_speed = 0.0;
+            }
             chassis_->set_command(cmd);
             break;
         }
         case SubsystemInput::NAVIGATION: {
-            // 使用导航速度指令（TwistStamped）
             ChassisCommand cmd;
             cmd.vx_gimbal = nav_cmd_vel_->twist.linear.x * 1348;
             cmd.vy_gimbal = nav_cmd_vel_->twist.linear.y * -1348;
             cmd.wz = nav_cmd_vel_->twist.angular.z;
-            cmd.spin_mode = (std::abs(nav_spin_speed_) > 1e-3f);
-            cmd.spin_speed = static_cast<double>(nav_spin_speed_);
+            cmd.spin_mode = ext_spin;
+            cmd.spin_speed = ext_spin ? internal_spin_spd : 0.0;
             chassis_->set_command(cmd);
             break;
         }
@@ -163,22 +178,25 @@ void Hub::dispatch_gimbal() {
             break;
         }
         case SubsystemInput::SCAN: {
+            if (!is_gimbal_scan_valid() || !gimbal_scan_cmd_) {
+                // In autonomous mode, if scan command is temporarily missing,
+                // hold current gimbal pose instead of keeping stale scan state.
+                GimbalCommand cmd;
+                cmd.scan_mode = false;
+                cmd.absolute = false;
+                cmd.pitch_deg = 0.0;
+                cmd.yaw_rad = 0.0;
+                gimbal_->set_command(cmd);
+                break;
+            }
             GimbalCommand cmd;
             cmd.scan_mode = true;
-            if (is_gimbal_scan_valid() && gimbal_scan_cmd_) {
-                cmd.scan_vel_yaw = static_cast<double>(gimbal_scan_cmd_->velocity.yaw);
-                cmd.scan_vel_pitch = static_cast<double>(gimbal_scan_cmd_->velocity.pitch);
-                cmd.scan_yaw_min = static_cast<double>(gimbal_scan_cmd_->velocity.yaw_min_range);
-                cmd.scan_yaw_max = static_cast<double>(gimbal_scan_cmd_->velocity.yaw_max_range);
-                cmd.scan_pitch_min = static_cast<double>(gimbal_scan_cmd_->velocity.pitch_min_range);
-                cmd.scan_pitch_max = static_cast<double>(gimbal_scan_cmd_->velocity.pitch_max_range);
-            } else {
-                // 默认扫描参数
-                cmd.scan_vel_yaw = 1.0;
-                cmd.scan_vel_pitch = 0.0;
-                cmd.scan_yaw_min = -M_PI;
-                cmd.scan_yaw_max = 0.0;
-            }
+            cmd.scan_vel_yaw = static_cast<double>(gimbal_scan_cmd_->velocity.yaw);
+            cmd.scan_vel_pitch = static_cast<double>(gimbal_scan_cmd_->velocity.pitch);
+            cmd.scan_yaw_min = static_cast<double>(gimbal_scan_cmd_->velocity.yaw_min_range);
+            cmd.scan_yaw_max = static_cast<double>(gimbal_scan_cmd_->velocity.yaw_max_range);
+            cmd.scan_pitch_min = static_cast<double>(gimbal_scan_cmd_->velocity.pitch_min_range);
+            cmd.scan_pitch_max = static_cast<double>(gimbal_scan_cmd_->velocity.pitch_max_range);
             gimbal_->set_command(cmd);
             break;
         }
@@ -192,9 +210,21 @@ void Hub::dispatch_fire() {
         case SubsystemInput::RC: {
             FireCommand cmd;
             cmd.friction_on = unified_input_->friction_on;
-            cmd.trigger_fire = unified_input_->fire_trigger;
             cmd.burst_mode = unified_input_->burst_mode;
             cmd.friction_speed = unified_input_->friction_speed;
+
+            bool full_auto = unified_input_->navigation_enabled
+                          && unified_input_->autoaim_enabled;
+            if (full_auto) {
+                // 全自主模式（左上+右中/上）：拨弹三重门控
+                //   nav_fire_allowed_  — auto_aim_switch 到达目标后由 BT 发布
+                //   is_autoaim_valid_nav() — 自瞄确实锁敌
+                bool aim_locked = nav_fire_allowed_ && is_autoaim_valid_nav();
+                cmd.trigger_fire = unified_input_->fire_trigger && aim_locked;
+            } else {
+                // 手动 / 半自动模式：右拨杆直接控制
+                cmd.trigger_fire = unified_input_->fire_trigger;
+            }
             fire_->set_command(cmd);
             break;
         }

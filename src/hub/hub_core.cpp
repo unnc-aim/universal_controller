@@ -68,7 +68,14 @@ Hub::Hub(std::shared_ptr<ChassisController> chassis, std::shared_ptr<GimbalContr
     // 发布自瞄开关
     std::string topic_auto_aim_switch = config_loader_.get_string("topics.auto_aim_switch", "/auto_aim_switch");
     pub_auto_aim_switch_ = this->create_publisher<std_msgs::msg::Int32>(
-        topic_auto_aim_switch, qos_best_effort_);
+        topic_auto_aim_switch, rclcpp::QoS(1));
+
+    // 订阅 auto_aim_switch（导航模式下由行为树发布，用于门控火控）
+    sub_auto_aim_switch_ = this->create_subscription<std_msgs::msg::Int32>(
+        topic_auto_aim_switch, rclcpp::QoS(1).best_effort(),
+        [this](const std_msgs::msg::Int32::SharedPtr msg) {
+            nav_fire_allowed_ = (msg->data != 0);
+        });
 
     // 订阅小陀螺速度指令（与 fake_vel_transform 共享话题，用于导航模式 spin_mode 判断）
     std::string topic_cmd_spin = config_loader_.get_string("topics.cmd_spin", "/cmd_spin");

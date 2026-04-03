@@ -302,11 +302,10 @@ void VTMInterpreter::process_input() {
     unified_output_.navigation_enabled = nav_mode_enabled_;
 
     // ========== 4. 底盘速度 ==========
-    if (nav_mode_enabled_) {
-        unified_output_.vx = 0.0;
-        unified_output_.vy = 0.0;
-        unified_output_.wz = 0.0;
-    } else {
+    // 不再在导航模式下强制清零 RC 速度。Hub 仲裁层已有完善的
+    // 切换逻辑：nav_vel 有效时用导航指令，超时则自动回退 RC。
+    // 清零会导致 nav_vel 失效后无法回退手动控制。
+    {
         // 摇杆（RC 硬件）+ 键盘方向（parser 输出）
         double joystick_vx = input_processor_.process_joystick(rc.right_joystick_y);
         double joystick_vy = input_processor_.process_joystick(-rc.right_joystick_x);

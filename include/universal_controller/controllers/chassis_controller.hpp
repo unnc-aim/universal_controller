@@ -59,6 +59,7 @@ class ChassisController : public BaseController {
         motor_type_ = type;
     }
     void set_power_limit(double limit);
+    void set_chassis_power(double power);
 
     // ========== 反馈回调 ==========
     void cb_steer_dji(const custom_msgs::msg::ReadDJIMotor::SharedPtr msg);
@@ -73,6 +74,7 @@ class ChassisController : public BaseController {
     void publish_dji_commands();
     void publish_lk_commands();
     void apply_power_limit(std::array<int16_t, 4> &drive_currents);
+    void apply_dji_power_limit(std::array<double, 4> &drive_speeds);
     void publish_supercap_command(int max_watt, int allow_watt);
 
     // 坐标转换
@@ -114,6 +116,10 @@ class ChassisController : public BaseController {
     double supercap_chassis_only_power_{0.0};
     bool supercap_online_{false};
     std::array<int16_t, 4> last_drive_currents_{0, 0, 0, 0};
+
+    // DJI 速度模式功率限制（基于裁判系统实测功率反馈）
+    double referee_chassis_power_{0.0};
+    double dji_power_scale_{1.0};
 
     // ========== ROS2 接口 ==========
     rclcpp::Subscription<custom_msgs::msg::ReadDJIMotor>::SharedPtr sub_steer_dji_;

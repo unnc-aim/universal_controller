@@ -176,6 +176,7 @@ struct ChassisConfig {
     double spin_speed_default{3000.0};
     double spin_speed_min{800.0};
     double spin_speed_max{6500.0};
+    double spin_compensation_k{0.0005}; // 小陀螺平移相位补偿系数
 
     // PID 参数（LK 电机用）
     ConfigLoader::PIDParams steer_angle_pid{0.3, 0.0, 0.0, 150.0, 300.0};
@@ -191,6 +192,8 @@ struct ChassisConfig {
     double power_K_min{0.001};
     double power_K_max{0.1};
     double power_filter_alpha{0.1};
+    double power_buffer_zone{15.0};       // DJI 模式：距功率上限多少瓦开始限制
+    double power_filter_alpha_dji{0.05};  // DJI 模式：缩放因子低通滤波系数
     std::string topic_supercap;
     std::string topic_supercap_write;
 
@@ -214,6 +217,7 @@ struct ChassisConfig {
         spin_speed_default = cfg.get_prefixed_double("controllers.chassis", "spin_speed_default", spin_speed_default);
         spin_speed_min = cfg.get_prefixed_double("controllers.chassis", "spin_speed_min", spin_speed_min);
         spin_speed_max = cfg.get_prefixed_double("controllers.chassis", "spin_speed_max", spin_speed_max);
+        spin_compensation_k = cfg.get_prefixed_double("controllers.chassis", "spin_compensation_k", spin_compensation_k);
 
         steer_angle_pid = cfg.get_pid_params("controllers.chassis.steer_angle_pid", steer_angle_pid);
         steer_speed_pid = cfg.get_pid_params("controllers.chassis.steer_speed_pid", steer_speed_pid);
@@ -228,6 +232,8 @@ struct ChassisConfig {
         power_K_min = cfg.get_prefixed_double("controllers.chassis", "power_K_min", power_K_min);
         power_K_max = cfg.get_prefixed_double("controllers.chassis", "power_K_max", power_K_max);
         power_filter_alpha = cfg.get_prefixed_double("controllers.chassis", "power_filter_alpha", power_filter_alpha);
+        power_buffer_zone = cfg.get_prefixed_double("controllers.chassis", "power_buffer_zone", power_buffer_zone);
+        power_filter_alpha_dji = cfg.get_prefixed_double("controllers.chassis", "power_filter_alpha_dji", power_filter_alpha_dji);
         topic_supercap = cfg.get_prefixed_string("controllers.chassis", "topic_supercap_read", topic_supercap);
         topic_supercap_write = cfg.get_prefixed_string("controllers.chassis", "topic_supercap_write", topic_supercap_write);
     }

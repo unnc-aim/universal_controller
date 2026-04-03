@@ -30,7 +30,7 @@
         wheel_track: 0.2746
         wheel_base: 0.2746
         ecd_zeros: [5989, 21248, 23534, 1128]
-        yaw_center_ecd: 50800
+        yaw_center_ecd: 18032
         topic_drive_write: '/ecat/sn2228292/app1/write'
         topic_drive_read: '/ecat/sn2228292/app1/read'
         topic_steer_write: '/ecat/sn2228292/app2/write'
@@ -39,6 +39,7 @@
         spin_speed_default: 3000.0
         spin_speed_min: 800.0
         spin_speed_max: 6500.0
+        spin_compensation_k: 0.00015  # 小陀螺模式下的平移相位补偿系数（解决平移倾斜问题）
         # LK 电机 PID (仅当 motor_type.chassis='LK' 时使用)
         steer_angle_pid: [0.3, 0.0, 0.0, 400.0, 50.0]
         steer_speed_pid: [2.6, 0.0, 0.0, 850.0, 80.0]

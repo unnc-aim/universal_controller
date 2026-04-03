@@ -76,6 +76,10 @@ void ChassisController::set_power_limit(double limit) {
     }
 }
 
+void ChassisController::set_chassis_power(double power) {
+    referee_chassis_power_ = power;
+}
+
 void ChassisController::update(double dt) {
     if (!command_valid_) {
         return;
@@ -140,6 +144,12 @@ void ChassisController::compute_control(double dt) {
 
 void ChassisController::transform_to_chassis_frame(double vx_g, double vy_g, double &vx_c, double &vy_c) const {
     double theta = gimbal_yaw_angle_;
+
+    // 小陀螺模式下加入平移相位补偿，预测延迟后的实际底盘角度
+    if (command_.spin_mode) {
+        theta += config_.spin_compensation_k * command_.wz;
+    }
+
     vx_c = vx_g * std::cos(theta) + vy_g * std::sin(theta);
     vy_c = -vx_g * std::sin(theta) + vy_g * std::cos(theta);
 }
@@ -172,16 +182,21 @@ void ChassisController::publish_dji_commands() {
     steer_msg.motor4_cmd = target_steer_ecds_[3];
     pub_steer_dji_->publish(steer_msg);
 
-    // 驱动指令
+    // 驱动指令（功率限制后）
+    auto drive_speeds = target_drive_speeds_;
+    if (config_.power_limit_enabled) {
+        apply_dji_power_limit(drive_speeds);
+    }
+
     auto drive_msg = custom_msgs::msg::WriteDJIMotor();
     drive_msg.motor1_enable = 1;
-    drive_msg.motor1_cmd = static_cast<int16_t>(target_drive_speeds_[0]);
+    drive_msg.motor1_cmd = static_cast<int16_t>(drive_speeds[0]);
     drive_msg.motor2_enable = 1;
-    drive_msg.motor2_cmd = static_cast<int16_t>(target_drive_speeds_[1]);
+    drive_msg.motor2_cmd = static_cast<int16_t>(drive_speeds[1]);
     drive_msg.motor3_enable = 1;
-    drive_msg.motor3_cmd = static_cast<int16_t>(target_drive_speeds_[2]);
+    drive_msg.motor3_cmd = static_cast<int16_t>(drive_speeds[2]);
     drive_msg.motor4_enable = 1;
-    drive_msg.motor4_cmd = static_cast<int16_t>(target_drive_speeds_[3]);
+    drive_msg.motor4_cmd = static_cast<int16_t>(drive_speeds[3]);
     pub_drive_dji_->publish(drive_msg);
 }
 
@@ -273,6 +288,35 @@ void ChassisController::cb_yaw(const custom_msgs::msg::ReadLkMotor::SharedPtr ms
         relative_ecd += 65536;
 
     gimbal_yaw_angle_ = (relative_ecd / 65535.0) * 2.0 * M_PI;
+}
+
+void ChassisController::apply_dji_power_limit(std::array<double, 4> &drive_speeds) {
+    if (power_limit_ <= 0.0) {
+        return;
+    }
+
+    const double buffer_zone = config_.power_buffer_zone;
+    const double alpha = config_.power_filter_alpha_dji;
+    double power_buffer = power_limit_ - referee_chassis_power_;
+
+    double target_scale = 1.0;
+    if (referee_chassis_power_ > 0.0 && power_buffer < buffer_zone) {
+        if (power_buffer > 0.0) {
+            // P = k * v^2 近似，功率与速度平方成正比，故对缩放因子取 sqrt
+            target_scale = std::sqrt(power_buffer / buffer_zone);
+        } else {
+            target_scale = 0.0;
+        }
+    }
+    target_scale = clamp(target_scale, 0.0, 1.0);
+
+    // 低通滤波平滑缩放因子，避免裁判数据刷新率(~10Hz)与控制频率(~1kHz)不匹配导致振荡
+    dji_power_scale_ = dji_power_scale_ * (1.0 - alpha) + target_scale * alpha;
+    dji_power_scale_ = clamp(dji_power_scale_, 0.0, 1.0);
+
+    for (int i = 0; i < 4; ++i) {
+        drive_speeds[i] *= dji_power_scale_;
+    }
 }
 
 } // namespace universal_controller

@@ -122,6 +122,8 @@ class Hub : public rclcpp::Node {
 
     float nav_spin_speed_{0.0f};
 
+    bool nav_fire_allowed_{false};  ///< 导航模式下行为树是否通过 auto_aim_switch 允许开火
+
     RefereeConstraints referee_;
     bool game_started_{false};
 
@@ -143,6 +145,7 @@ class Hub : public rclcpp::Node {
     rclcpp::Subscription<dji_referee_protocol::msg::Constraints>::SharedPtr sub_referee_;
     rclcpp::Subscription<dji_referee_protocol::msg::GameStatus>::SharedPtr sub_game_status_;
     rclcpp::Subscription<example_interfaces::msg::Float32>::SharedPtr sub_cmd_spin_;
+    rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr sub_auto_aim_switch_;
 
     // ========== 发布者 ==========
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_auto_aim_switch_;
