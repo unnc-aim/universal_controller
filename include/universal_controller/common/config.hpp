@@ -192,8 +192,10 @@ struct ChassisConfig {
     double power_K_min{0.001};
     double power_K_max{0.1};
     double power_filter_alpha{0.1};
-    double power_buffer_zone{15.0};       // DJI 模式：距功率上限多少瓦开始限制
-    double power_filter_alpha_dji{0.05};  // DJI 模式：缩放因子低通滤波系数
+    double power_buffer_zone{15.0};             // (已弃用) DJI 反馈模式参数
+    double power_filter_alpha_dji{0.05};        // (已弃用) DJI 反馈模式参数
+    double power_reference{200.0};              // DJI 速度 clamp：4 电机在此功率下达到 speed_at_power_reference
+    double speed_at_power_reference{8500.0};    // DJI 速度 clamp：参考功率下每个电机最大 RPM
     std::string topic_supercap;
     std::string topic_supercap_write;
 
@@ -234,6 +236,8 @@ struct ChassisConfig {
         power_filter_alpha = cfg.get_prefixed_double("controllers.chassis", "power_filter_alpha", power_filter_alpha);
         power_buffer_zone = cfg.get_prefixed_double("controllers.chassis", "power_buffer_zone", power_buffer_zone);
         power_filter_alpha_dji = cfg.get_prefixed_double("controllers.chassis", "power_filter_alpha_dji", power_filter_alpha_dji);
+        power_reference = cfg.get_prefixed_double("controllers.chassis", "power_reference", power_reference);
+        speed_at_power_reference = cfg.get_prefixed_double("controllers.chassis", "speed_at_power_reference", speed_at_power_reference);
         topic_supercap = cfg.get_prefixed_string("controllers.chassis", "topic_supercap_read", topic_supercap);
         topic_supercap_write = cfg.get_prefixed_string("controllers.chassis", "topic_supercap_write", topic_supercap_write);
     }

@@ -182,7 +182,7 @@ void ChassisController::publish_dji_commands() {
     steer_msg.motor4_cmd = target_steer_ecds_[3];
     pub_steer_dji_->publish(steer_msg);
 
-    // 驱动指令（功率限制后）
+    // 驱动指令（power_limit_enabled 时做速度 clamp）
     auto drive_speeds = target_drive_speeds_;
     if (config_.power_limit_enabled) {
         apply_dji_power_limit(drive_speeds);
@@ -291,31 +291,21 @@ void ChassisController::cb_yaw(const custom_msgs::msg::ReadLkMotor::SharedPtr ms
 }
 
 void ChassisController::apply_dji_power_limit(std::array<double, 4> &drive_speeds) {
-    if (power_limit_ <= 0.0) {
+    if (power_limit_ <= 0.0 || config_.power_reference <= 0.0) {
         return;
     }
 
-    const double buffer_zone = config_.power_buffer_zone;
-    const double alpha = config_.power_filter_alpha_dji;
-    double power_buffer = power_limit_ - referee_chassis_power_;
-
-    double target_scale = 1.0;
-    if (referee_chassis_power_ > 0.0 && power_buffer < buffer_zone) {
-        if (power_buffer > 0.0) {
-            // P = k * v^2 近似，功率与速度平方成正比，故对缩放因子取 sqrt
-            target_scale = std::sqrt(power_buffer / buffer_zone);
-        } else {
-            target_scale = 0.0;
-        }
+    // 方案B：纯前馈速度 clamp，无反馈闭环
+    // 假设 P ∝ v²，4电机在 power_reference 功率下能跑 speed_at_power_reference RPM
+    // → 在 power_limit 功率下，最大速度 = ref_speed * sqrt(power_limit / power_reference)
+    double ratio = power_limit_ / config_.power_reference;
+    if (ratio >= 1.0) {
+        return;
     }
-    target_scale = clamp(target_scale, 0.0, 1.0);
-
-    // 低通滤波平滑缩放因子，避免裁判数据刷新率(~10Hz)与控制频率(~1kHz)不匹配导致振荡
-    dji_power_scale_ = dji_power_scale_ * (1.0 - alpha) + target_scale * alpha;
-    dji_power_scale_ = clamp(dji_power_scale_, 0.0, 1.0);
+    double max_speed = config_.speed_at_power_reference * std::sqrt(ratio);
 
     for (int i = 0; i < 4; ++i) {
-        drive_speeds[i] *= dji_power_scale_;
+        drive_speeds[i] = clamp(drive_speeds[i], -max_speed, max_speed);
     }
 }
 

@@ -61,6 +61,11 @@ class ChassisController : public BaseController {
     void set_power_limit(double limit);
     void set_chassis_power(double power);
 
+    /** 云台 yaw 相对底盘（rad），与内部运动学坐标转换一致，供 Hub 发布底盘系速度用 */
+    double gimbal_yaw_angle() const {
+        return -gimbal_yaw_angle_;
+    }
+
     // ========== 反馈回调 ==========
     void cb_steer_dji(const custom_msgs::msg::ReadDJIMotor::SharedPtr msg);
     void cb_steer_lk(const custom_msgs::msg::ReadLkMotorMulti::SharedPtr msg);

@@ -29,7 +29,7 @@
       chassis:
         wheel_track: 0.2746
         wheel_base: 0.2746
-        ecd_zeros: [5989, 21248, 23534, 1128]
+        ecd_zeros: [16300, 4735, 7000, 950]
         yaw_center_ecd: 18032
         topic_drive_write: '/ecat/sn2228292/app1/write'
         topic_drive_read: '/ecat/sn2228292/app1/read'
@@ -45,7 +45,7 @@
         steer_speed_pid: [2.6, 0.0, 0.0, 850.0, 80.0]
         drive_speed_pid: [0.7, 0.0, 0.0, 2000.0, 250.0]
         # 功率限制（参考 H7 power_controller 模型预测方法）
-        power_limit_enabled: false
+        power_limit_enabled: true
         power_limit_default: 80.0
         power_R: 0.7708
         power_K: 0.0131

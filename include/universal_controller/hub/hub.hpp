@@ -29,6 +29,9 @@
 #include "pb_rm_interfaces/msg/gimbal_cmd.hpp"
 #include "universal_controller/msg/unified_input.hpp"
 
+// 底盘指令消息（chassis_controllers）
+#include "chassis_controllers/msg/chassis_control.hpp"
+
 // DJI裁判系统自定义消息
 #include "dji_referee_protocol/msg/constants.hpp"
 #include "dji_referee_protocol/msg/constraints.hpp"
@@ -149,10 +152,15 @@ class Hub : public rclcpp::Node {
 
     // ========== 发布者 ==========
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_auto_aim_switch_;
+    rclcpp::Publisher<chassis_controllers::msg::ChassisControl>::SharedPtr pub_chassis_command_;
 
     // ========== 定时器 ==========
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Time last_update_time_;
+
+    // ========== 底盘指令单位换算 ==========
+    double chassis_cmd_k_linear_{1348.0};  ///< 内部线速度编码 per m/s
+    double chassis_cmd_k_spin_{1348.0};    ///< 内部小陀螺编码 per rad/s（需实车标定）
 
     // ========== QoS ==========
     rclcpp::QoS qos_best_effort_{rclcpp::QoS(1).best_effort()};

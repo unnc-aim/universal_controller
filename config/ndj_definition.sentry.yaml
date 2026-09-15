@@ -1,58 +1,36 @@
 # NDJ Trigger Definition (Sentry)
-# 设计目标:
-# - 2 x 3: 左右两个 trigger 的 3 个停靠点
-# - 1: 遥控器滚轮配置点
+# 规则: 动作默认 false；dock_points 仅 on/off；transitions 可 toggle
 #
-# 规则:
-# - 所有动作默认 false
-# - 只有填写并设为 true 的动作才会生效
-# - dock_points 只能使用 on/off（强制状态）
-# - transitions 可使用 on/off/toggle
+# 左中 + 右中 = 仅小陀螺（spin_mode），无导航 / 行为树 / 摩擦 / 供弹
+#
+# 左上：全自主（自瞄开 + 允许 nav_topic，便于 RViz / Nav2 发 cmd_vel；不必依赖行为树进程）。
+# 左上 + 右上：全自主 — 摩擦轮常开；小陀螺由导航/cmd_vel（含 fake_vel 叠加 cmd_spin）与 BT 门控；
+# 拨弹由 Hub 三重门控（full_auto + nav_fire_allowed + 自瞄有效）。此处显式关 RC spin_mode，避免从右中带出。
+# 右中：不再强制 nav_topic off（否则在「左上 + 右中」时永远进不了导航仲裁；行为树关死后也无法靠 BT 兜底）。
 
 ndj_trigger_def:
   version: 1
 
-  # 供解析器参考: 可选动作全集（dock_points 仅 on/off，buttons/transitions 可 toggle）
-  # action_schema:
-  #   emergency_stop: [on, off, toggle] # 急停
-  #   autoaim: [on, off, toggle] # 自瞄
-  #   nav_topic: [on, off, toggle] # 导航
-  #   behavior_tree_topic: [on, off, toggle] # 行为树
-  #   friction_wheel: [on, off, toggle] # 摩擦轮
-  #   feeder: [on, off, toggle] # 拨弹盘
-  #   feeder_burst: [on, off, toggle] # 连发模式
-  #   spin_mode: [on, off, toggle] # 小陀螺开关
-  #   spin_control: [accelerate, decelerate] # 小陀螺速度控制
-
-  # 左 trigger: 3 个停靠点
-  # 上=1: 导航模式（自瞄开）
-  # 中=3: 手动模式（自瞄关）
-  # 下=2: 急停
   left_switch:
     dock_points:
       up:
         actions:
           emergency_stop: {off: true}
           autoaim: {on: true}
+          nav_topic: {on: true} # 允许 nav_topic，便于 RViz / Nav2 发 cmd_vel；不必依赖行为树进程
       mid:
         actions:
           emergency_stop: {off: true}
           autoaim: {off: true}
+          nav_topic: {off: true}
+          behavior_tree_topic: {off: true}
       down:
         actions:
           emergency_stop: {on: true}
           autoaim: {off: true}
 
-    transitions:
-      mid_to_up:
-        actions:
-          spin_mode: {toggle: true}
+    transitions: {}
 
-  # 右 trigger: 3 个停靠点
-  # 上: 导航+行为树，摩擦轮+供弹均开
-  # 中: 导航+行为树，摩擦轮开、供弹关
-  # 下: 全关（导航/行为树/摩擦/供弹均关）
-  # transitions: 下->中时，连发/单发切换
   right_switch:
     dock_points:
       up:
@@ -61,12 +39,15 @@ ndj_trigger_def:
           behavior_tree_topic: {on: true}
           friction_wheel: {on: true}
           feeder: {on: true}
+          spin_mode: {off: true}
       mid:
         actions:
-          nav_topic: {on: true}
-          behavior_tree_topic: {on: true}
-          friction_wheel: {on: true}
+          # nav_topic: {off: true}
+          behavior_tree_topic: {off: true}
+          friction_wheel: {off: true}
           feeder: {off: true}
+          # autoaim: {off: true}
+          spin_mode: {on: true}
       down:
         actions:
           nav_topic: {off: true}
@@ -80,7 +61,6 @@ ndj_trigger_def:
         actions:
           feeder_burst: {toggle: true}
 
-  # 遥控器滚轮: 加速/减速小陀螺
   dial_up:
     threshold: 0.5
     actions:

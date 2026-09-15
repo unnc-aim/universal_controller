@@ -6,6 +6,16 @@
 #include "universal_controller/hub/hub.hpp"
 #include <cmath>
 
+namespace {
+
+/** 云台系线速度 (m/s) → 底盘系，与 ChassisController::transform_to_chassis_frame 一致 */
+void gimbal_vel_to_chassis_mps(double vx_g, double vy_g, double theta, double &vx_c, double &vy_c) {
+    vx_c = vx_g * std::cos(theta) + vy_g * std::sin(theta);
+    vy_c = -vx_g * std::sin(theta) + vy_g * std::cos(theta);
+}
+
+} // namespace
+
 namespace universal_controller {
 
 bool Hub::is_nav_vel_valid() const {
@@ -86,8 +96,10 @@ bool Hub::is_autoaim_valid() const {
 }
 
 bool Hub::is_autoaim_valid_nav() const {
-    // 导航模式下的自瞄有效性：不需要 RC 的 autoaim_enabled 标志
-    // 只要自瞄指令有效即自动启用
+    // 导航侧自瞄：尊重 RC autoaim_enabled（左拨杆），与 full_auto / 拨弹门控一致
+    if (!unified_input_ || !unified_input_->autoaim_enabled) {
+        return false;
+    }
     if (!autoaim_cmd_ || !autoaim_cmd_->control) {
         return false;
     }
@@ -98,7 +110,11 @@ bool Hub::is_autoaim_valid_nav() const {
 
 void Hub::dispatch_commands() {
     if (arbitration_.emergency_stop) {
-        chassis_->stop();
+        chassis_controllers::msg::ChassisControl estop_msg;
+        estop_msg.emergency_stop = 1;
+        estop_msg.power_limit = 100;
+        pub_chassis_command_->publish(estop_msg);
+
         gimbal_->stop();
         fire_->stop();
         return;
@@ -113,50 +129,61 @@ void Hub::dispatch_commands() {
 }
 
 void Hub::dispatch_chassis() {
-    // 传递裁判系统功率数据
-    if (referee_.power_limit > 0.0) {
-        chassis_->set_power_limit(referee_.power_limit);
-    }
-    chassis_->set_chassis_power(referee_.power);
-
     bool ext_spin = (std::abs(nav_spin_speed_) > 1e-3f);
-    // 内部小陀螺速度（编码器单位 ~3000），由 RC 解释器维护
-    double internal_spin_spd = unified_input_->spin_speed;
+
+    if (!game_started_) {
+        ext_spin = false;
+    }
+    if (arbitration_.chassis == SubsystemInput::NAVIGATION) {
+        ext_spin = false;
+    }
+
+    chassis_controllers::msg::ChassisControl msg;
+    msg.emergency_stop = 0;
+    msg.power_limit = 100;
 
     switch (arbitration_.chassis) {
         case SubsystemInput::RC: {
-            ChassisCommand cmd;
-            cmd.vx_gimbal = unified_input_->vx;
-            cmd.vy_gimbal = unified_input_->vy;
-            if (ext_spin) {
-                cmd.spin_mode = true;
-                cmd.wz = internal_spin_spd;
-                cmd.spin_speed = internal_spin_spd;
-            } else if (unified_input_->spin_mode) {
-                cmd.spin_mode = true;
-                cmd.wz = unified_input_->wz;
-                cmd.spin_speed = internal_spin_spd;
-            } else {
-                cmd.spin_mode = false;
-                cmd.wz = unified_input_->wz;
-                cmd.spin_speed = 0.0;
+            const double vx_g = unified_input_->vx / chassis_cmd_k_linear_;
+            const double vy_g = unified_input_->vy / chassis_cmd_k_linear_;
+            double theta = chassis_->gimbal_yaw_angle();
+            if (ext_spin || unified_input_->spin_mode) {
+                // ext_spin：行为树 /cmd_spin；否则 RC 小陀螺用 unified wz（与 spin_speed 同量纲）
+                const double wz_enc =
+                    ext_spin ? static_cast<double>(nav_spin_speed_) : unified_input_->wz;
+                theta += chassis_config_.spin_compensation_k * wz_enc;
             }
-            chassis_->set_command(cmd);
+            double vx_c = 0.0;
+            double vy_c = 0.0;
+            gimbal_vel_to_chassis_mps(vx_g, vy_g, theta, vx_c, vy_c);
+            msg.x_speed = static_cast<float>(vx_c);
+            msg.y_speed = static_cast<float>(vy_c);
+            if (ext_spin || unified_input_->spin_mode) {
+                const double spd =
+                    ext_spin ? static_cast<double>(nav_spin_speed_) : unified_input_->wz;
+                msg.spin_speed = static_cast<float>(spd / chassis_cmd_k_spin_);
+            } else {
+                msg.spin_speed = 0.0f;
+            }
             break;
         }
         case SubsystemInput::NAVIGATION: {
-            ChassisCommand cmd;
-            cmd.vx_gimbal = nav_cmd_vel_->twist.linear.x * 1348;
-            cmd.vy_gimbal = nav_cmd_vel_->twist.linear.y * -1348;
-            cmd.wz = nav_cmd_vel_->twist.angular.z;
-            cmd.spin_mode = ext_spin;
-            cmd.spin_speed = ext_spin ? internal_spin_spd : 0.0;
-            chassis_->set_command(cmd);
+            const double vx_g = -nav_cmd_vel_->twist.linear.x;
+            const double vy_g = -nav_cmd_vel_->twist.linear.y;
+            const double theta = chassis_->gimbal_yaw_angle();
+            double vx_c = 0.0;
+            double vy_c = 0.0;
+            gimbal_vel_to_chassis_mps(vx_g, vy_g, theta, vx_c, vy_c);
+            msg.x_speed = static_cast<float>(vx_c);
+            msg.y_speed = static_cast<float>(vy_c);
+            msg.spin_speed = static_cast<float>(nav_cmd_vel_->twist.angular.z);
             break;
         }
         default:
             break;
     }
+
+    pub_chassis_command_->publish(msg);
 }
 
 void Hub::dispatch_gimbal() {

@@ -70,6 +70,10 @@ Hub::Hub(std::shared_ptr<ChassisController> chassis, std::shared_ptr<GimbalContr
     pub_auto_aim_switch_ = this->create_publisher<std_msgs::msg::Int32>(
         topic_auto_aim_switch, rclcpp::QoS(1));
 
+    // 发布底盘指令（ChassisControl）
+    pub_chassis_command_ = this->create_publisher<chassis_controllers::msg::ChassisControl>(
+        "/chassis_command", rclcpp::SensorDataQoS());
+
     // 订阅 auto_aim_switch（导航模式下由行为树发布，用于门控火控）
     sub_auto_aim_switch_ = this->create_subscription<std_msgs::msg::Int32>(
         topic_auto_aim_switch, rclcpp::QoS(1).best_effort(),
@@ -120,12 +124,20 @@ void Hub::declare_parameters() {
     this->declare_parameter("topics.cmd_spin", "/cmd_spin");
     this->declare_parameter("gimbal_scan_timeout_s", 0.5);
 
+    // 底盘指令单位换算参数
+    this->declare_parameter("chassis_cmd.k_linear", 1348.0);
+    this->declare_parameter("chassis_cmd.k_spin", 1348.0);
+
     // RC 融合参数
     this->declare_parameter("rc_hub.topic_vtm_input", "/universal_controller/input/vtm");
     this->declare_parameter("rc_hub.topic_ndj_input", "/universal_controller/input/ndj");
     this->declare_parameter("rc_hub.connection_timeout_s", 0.5);
     this->declare_parameter("rc_hub.priority", std::vector<std::string>{"vtm", "ndj"});
     this->declare_parameter("rc_hub.analog_zero_epsilon", 1e-6);
+
+    // 加载底盘指令换算参数
+    chassis_cmd_k_linear_ = this->get_parameter("chassis_cmd.k_linear").as_double();
+    chassis_cmd_k_spin_ = this->get_parameter("chassis_cmd.k_spin").as_double();
 
     // 加载 RC 融合参数
     rc_connection_timeout_s_ = this->get_parameter("rc_hub.connection_timeout_s").as_double();
