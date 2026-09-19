@@ -290,7 +290,9 @@ void NDJInterpreter::process_input() {
         double joystick_vx = input_processor_.process_joystick(rc.right_y);
         double joystick_vy = input_processor_.process_joystick(rc.right_x);
         unified_output_.vx = joystick_vx + km_out.key_vx;
-        unified_output_.vy = joystick_vy + km_out.key_vy;
+        // NDJ vy 符号与下游 LK IK 约定相反：取反使右推摇杆/D 键 = 右移
+        // （对齐 VTM 解释器 vtm_interpreter.cpp 的 -right_joystick_x 处理）
+        unified_output_.vy = -(joystick_vy + km_out.key_vy);
         unified_output_.wz = spin_mode_enabled_ ? km_parser_.get_spin_speed() : 0.0;
     }
 

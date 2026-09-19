@@ -207,7 +207,9 @@ KeyboardMouseOutput KeyboardMouseParser::parse(const KeyboardMouseInput &input) 
         my * config_.mouse_pitch_gain,
         -config_.mouse_limit, config_.mouse_limit);
 
-    out.pitch_delta = mouse_pitch_offset * config_.pitch_gain_coeff * (M_PI / 180.0);
+    // pitch 下游（gimbal target_pitch_deg_）按“度”累加，yaw 按弧度；
+    // 此处若再乘 (M_PI/180) 会把 pitch 缩小 57.3 倍，导致鼠标俯仰幅度过小
+    out.pitch_delta = mouse_pitch_offset * config_.pitch_gain_coeff;
     out.yaw_delta = mouse_yaw_offset * config_.yaw_gain_coeff;
 
     // ========== 4. 小陀螺 ==========
