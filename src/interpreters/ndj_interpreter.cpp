@@ -284,7 +284,6 @@ void NDJInterpreter::process_input() {
     if (nav_mode_enabled_) {
         unified_output_.vx = 0.0;
         unified_output_.vy = 0.0;
-        unified_output_.wz = 0.0;
     } else {
         // 摇杆（RC 硬件）+ 键盘方向（parser 输出）
         double joystick_vx = input_processor_.process_joystick(rc.right_y);
@@ -293,8 +292,10 @@ void NDJInterpreter::process_input() {
         // NDJ vy 符号与下游 LK IK 约定相反：取反使右推摇杆/D 键 = 右移
         // （对齐 VTM 解释器 vtm_interpreter.cpp 的 -right_joystick_x 处理）
         unified_output_.vy = -(joystick_vy + km_out.key_vy);
-        unified_output_.wz = spin_mode_enabled_ ? km_parser_.get_spin_speed() : 0.0;
     }
+    // 小陀螺 wz 不因导航模式清零：导航仲裁有效时 Hub 用 cmd_vel 的 angular.z（BT/fake_vel），
+    // 导航速度失效回落到 RC 仲裁时用此值驱动 spin_speed（左拨杆上档开、离开上档关）
+    unified_output_.wz = spin_mode_enabled_ ? km_parser_.get_spin_speed() : 0.0;
 
     unified_output_.spin_mode = spin_mode_enabled_;
     unified_output_.spin_speed = km_parser_.get_spin_speed();

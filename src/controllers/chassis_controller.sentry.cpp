@@ -85,6 +85,7 @@ void ChassisController::init(rclcpp::Node *node, const ConfigLoader &cfg) {
     sub_yaw_ = node->create_subscription<custom_msgs::msg::ReadLkMotor>(
         config_.topic_yaw_read, qos_best_effort_,
         std::bind(&ChassisController::cb_yaw, this, std::placeholders::_1));
+    pub_yaw_joint_ = node->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
 
     // 超级电容订阅（功率限制）
     if (config_.power_limit_enabled && !config_.topic_supercap.empty()) {
@@ -404,6 +405,16 @@ void ChassisController::cb_yaw(const custom_msgs::msg::ReadLkMotor::SharedPtr ms
         relative_ecd += 65536;
 
     gimbal_yaw_angle_ = (relative_ecd / 65535.0) * 2.0 * M_PI;
+
+    // Preserve measurement time; missing/offline feedback must not create a fresh TF.
+    const double age = (node_->now() - rclcpp::Time(msg->header.stamp)).seconds();
+    if (msg->online && age >= 0.0 && age < 0.2) {
+        sensor_msgs::msg::JointState joint;
+        joint.header.stamp = msg->header.stamp;
+        joint.name = {"gimbal_yaw_joint"};
+        joint.position = {gimbal_yaw_angle_};
+        pub_yaw_joint_->publish(joint);
+    }
 }
 
 void ChassisController::apply_dji_power_limit(std::array<double, 4> &drive_speeds) {

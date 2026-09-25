@@ -1,12 +1,13 @@
 # NDJ Trigger Definition (Sentry)
 # 规则: 动作默认 false；dock_points 仅 on/off；transitions 可 toggle
 #
-# 左中 + 右中 = 仅小陀螺（spin_mode），无导航 / 行为树 / 摩擦 / 供弹
+# 小陀螺由左拨杆上升沿控制: 拨入上档瞬间开启，离开上档（回中/急停）关闭。
+# 不用 dock 电平写入，键盘 V 的 toggle 不再被覆盖。
 #
-# 左上：全自主（自瞄开 + 允许 nav_topic，便于 RViz / Nav2 发 cmd_vel；不必依赖行为树进程）。
-# 左上 + 右上：全自主 — 摩擦轮常开；小陀螺由导航/cmd_vel（含 fake_vel 叠加 cmd_spin）与 BT 门控；
-# 拨弹由 Hub 三重门控（full_auto + nav_fire_allowed + 自瞄有效）。此处显式关 RC spin_mode，避免从右中带出。
-# 右中：不再强制 nav_topic off（否则在「左上 + 右中」时永远进不了导航仲裁；行为树关死后也无法靠 BT 兜底）。
+# 左上：小陀螺开 + 全自主（自瞄开 + 允许 nav_topic，便于 RViz / Nav2 发 cmd_vel；不必依赖行为树进程）。
+# 左上 + 右上：全自主 — 摩擦轮常开；导航仲裁有效时小陀螺由导航/cmd_vel（含 fake_vel 叠加 cmd_spin）接管；
+# 拨弹由 Hub 三重门控（full_auto + nav_fire_allowed + 自瞄有效）。
+# 右中：不强制 nav_topic off（否则在「左上 + 右中」时永远进不了导航仲裁；行为树关死后也无法靠 BT 兜底）。
 
 ndj_trigger_def:
   version: 1
@@ -29,7 +30,16 @@ ndj_trigger_def:
           emergency_stop: {on: true}
           autoaim: {off: true}
 
-    transitions: {}
+    transitions:
+      mid_to_up:
+        actions:
+          spin_mode: {on: true} # 上升沿：拨入上档瞬间开启小陀螺
+      up_to_mid:
+        actions:
+          spin_mode: {off: true} # 离开上档：关闭
+      mid_to_down:
+        actions:
+          spin_mode: {off: true} # 急停路径：确保关闭
 
   right_switch:
     dock_points:
@@ -39,7 +49,6 @@ ndj_trigger_def:
           behavior_tree_topic: {on: true}
           friction_wheel: {on: true}
           feeder: {on: true}
-          spin_mode: {off: true}
       mid:
         actions:
           # nav_topic: {off: true}
@@ -47,14 +56,12 @@ ndj_trigger_def:
           friction_wheel: {off: true}
           feeder: {off: true}
           # autoaim: {off: true}
-          spin_mode: {on: true}
       down:
         actions:
           nav_topic: {off: true}
           behavior_tree_topic: {off: true}
           friction_wheel: {off: true}
           feeder: {off: true}
-          spin_mode: {off: true}
 
     transitions:
       down_to_mid:

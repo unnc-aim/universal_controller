@@ -24,6 +24,7 @@
 #include "custom_msgs/msg/write_lk_motor_broadcast_current_control.hpp"
 #include "custom_msgs/msg/write_super_cap.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 
 #include <array>
 #include <memory>
@@ -138,6 +139,7 @@ class ChassisController : public BaseController {
     rclcpp::Publisher<custom_msgs::msg::WriteLkMotorBroadcastCurrentControl>::SharedPtr pub_drive_lk_;
     rclcpp::Publisher<custom_msgs::msg::WriteLkMotorBroadcastCurrentControl>::SharedPtr pub_steer_lk_;
     rclcpp::Publisher<custom_msgs::msg::WriteSuperCap>::SharedPtr pub_supercap_;
+    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr pub_yaw_joint_;
 
     rclcpp::QoS qos_best_effort_{rclcpp::QoS(1).best_effort()};
 };
