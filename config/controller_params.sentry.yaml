@@ -69,6 +69,15 @@
         topic_imu_read: '/ecat/sn4653115/app2/read'
         topic_autoaim_cmd: '/sp_vision/autoaim_command'
         autoaim_timeout_s: 0.2
+        follow_navigation: true
+        navigation_autoaim_takeover: true  # 行进中的云台许可；发射仍使用原有条件
+        navigation_frame: gimbal_yaw
+        follow_min_yaw_rate: 0.3           # rad/s，转动段目标下限
+        follow_max_yaw_rate: 1.0           # rad/s
+        follow_max_yaw_accel: 2.0          # rad/s^2
+        follow_yaw_tolerance: 0.02        # rad，到位后减速停止
+        follow_min_speed: 0.03            # m/s，低速时减缓云台转动并保持朝向
+        follow_input_timeout_s: 0.2       # 导航指令与 IMU 的有效时间
         # Yaw 级联 PID
         yaw_pos_pid: [20.0, 0.0, 0.5, 50.0, 50.0]
         yaw_spd_pid: [220.0, 0.3, 4600.0, 2048.0, 200.0]

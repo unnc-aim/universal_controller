@@ -59,12 +59,30 @@ ArbitrationResult Hub::arbitrate() {
 
     // --- 云台仲裁 ---
     if (unified_input_->navigation_enabled) {
-        // 导航模式：只有 auto_aim_switch 允许（nav_fire_allowed_）时才启用自瞄，
-        // 否则一律走扫描路径，保证导航侧云台旋转优先
-        if (nav_fire_allowed_ && is_autoaim_valid_nav()) {
+        bool follow_ready = false;
+        bool moving = false;
+        if (gimbal_config_.follow_navigation && result.chassis == SubsystemInput::NAVIGATION) {
+            const auto stamp = rclcpp::Time(nav_cmd_vel_->header.stamp);
+            const double age = (this->now() - stamp).seconds();
+            const double speed = std::hypot(nav_cmd_vel_->twist.linear.x, nav_cmd_vel_->twist.linear.y);
+            follow_ready = nav_cmd_vel_->header.frame_id == gimbal_config_.navigation_frame &&
+                           stamp.nanoseconds() > 0 && age >= -0.05 &&
+                           age < gimbal_config_.follow_input_timeout_s && std::isfinite(speed);
+            moving = follow_ready && speed >= gimbal_config_.follow_min_speed;
+        }
+        const bool scan_valid = is_gimbal_scan_valid();
+        // 新许可只作用于行进中的云台；显式扫描及发射条件继续沿用原有处理。
+        const bool navigation_aim_allowed = gimbal_config_.navigation_autoaim_takeover &&
+            moving && !scan_valid && autoaim_cmd_ &&
+            autoaim_last_time_ > 0.0 && this->now().seconds() >= autoaim_last_time_ &&
+            std::isfinite(autoaim_cmd_->yaw) && std::isfinite(autoaim_cmd_->pitch);
+        if ((nav_fire_allowed_ || navigation_aim_allowed) && is_autoaim_valid_nav()) {
             result.gimbal = SubsystemInput::AUTOAIM;
-        } else if (is_gimbal_scan_valid()) {
+        } else if (scan_valid) {
             result.gimbal = SubsystemInput::SCAN;
+        } else if (follow_ready && (moving || arbitration_.gimbal == SubsystemInput::NAVIGATION ||
+                                   arbitration_.gimbal == SubsystemInput::AUTOAIM)) {
+            result.gimbal = SubsystemInput::NAVIGATION;
         } else {
             result.gimbal = SubsystemInput::SCAN;
         }
@@ -188,6 +206,16 @@ void Hub::dispatch_chassis() {
 
 void Hub::dispatch_gimbal() {
     switch (arbitration_.gimbal) {
+        case SubsystemInput::NAVIGATION: {
+            GimbalCommand cmd;
+            cmd.follow_navigation = true;
+            // 与 dispatch_chassis 的速度方向转换一致。
+            cmd.navigation_vx = -nav_cmd_vel_->twist.linear.x;
+            cmd.navigation_vy = -nav_cmd_vel_->twist.linear.y;
+            cmd.navigation_stamp_ns = rclcpp::Time(nav_cmd_vel_->header.stamp).nanoseconds();
+            gimbal_->set_command(cmd);
+            break;
+        }
         case SubsystemInput::RC: {
             GimbalCommand cmd;
             cmd.pitch_deg = unified_input_->pitch_delta;

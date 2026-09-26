@@ -154,6 +154,12 @@ struct GimbalCommand {
     bool from_action{false}; ///< 是否来自 Action Server
     bool absolute{true};     ///< true=绝对角度, false=增量
 
+    // 导航平移速度已转换为实际云台坐标系方向。
+    bool follow_navigation{false};
+    double navigation_vx{0.0};
+    double navigation_vy{0.0};
+    int64_t navigation_stamp_ns{0};
+
     // 扫描模式（速度扫描，由行为树驱动）
     bool scan_mode{false};       ///< 是否为扫描模式
     double scan_vel_yaw{0.0};    ///< Yaw 扫描速度 (rad/s)

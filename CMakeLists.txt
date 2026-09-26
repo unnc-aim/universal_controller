@@ -133,6 +133,13 @@ install(DIRECTORY config/
 
 # ========== 测试 ==========
 if(BUILD_TESTING)
+  add_executable(test_navigation_gimbal
+    test/test_navigation_gimbal.cpp
+    src/controllers/gimbal_controller.cpp
+  )
+  ament_target_dependencies(test_navigation_gimbal rclcpp sensor_msgs custom_msgs)
+  add_test(NAME test_navigation_gimbal COMMAND test_navigation_gimbal)
+
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 endif()

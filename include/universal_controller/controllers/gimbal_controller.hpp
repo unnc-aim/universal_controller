@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
 
@@ -43,12 +44,17 @@ class GimbalController : public BaseController {
     void set_command(const GimbalCommand &cmd);
 
   private:
+    friend struct NavigationGimbalTest;
+
     void cb_imu(const sensor_msgs::msg::Imu::SharedPtr msg);
     void cb_pitch_feedback(const custom_msgs::msg::ReadDJIMotor::SharedPtr msg);
     void cb_yaw_feedback(const custom_msgs::msg::ReadLkMotor::SharedPtr msg);
 
     void compute_pitch_control();
     void compute_yaw_control();
+    bool navigation_inputs_ready(int64_t now_ns) const;
+    void compute_navigation_yaw_control();
+    void reset_navigation_follow();
     void publish_commands();
     void stop_all();
 
@@ -62,11 +68,14 @@ class GimbalController : public BaseController {
     // 指令
     GimbalCommand command_;
     bool command_valid_{false};
+    std::mutex mutex_;
 
     // IMU 状态
     double imu_pitch_rad_{0.0};
     double imu_yaw_rad_{0.0};
     double imu_gyro_z_{0.0};
+    int64_t imu_stamp_ns_{0};
+    bool navigation_imu_valid_{false};
 
     // Yaw 电机状态
     double yaw_motor_speed_{0.0};
@@ -75,6 +84,13 @@ class GimbalController : public BaseController {
     // 目标状态
     double target_pitch_deg_{0.0};
     double target_yaw_rad_{0.0};
+
+    // 目标方向按导航消息更新，角度轨迹按控制周期更新。
+    bool navigation_follow_active_{false};
+    bool navigation_moving_{false};
+    int64_t navigation_stamp_ns_{0};
+    double navigation_target_yaw_{0.0};
+    double navigation_yaw_rate_{0.0};
 
     // 扫描状态
     double dt_{0.0};

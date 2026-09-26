@@ -61,16 +61,29 @@ void GimbalController::init(rclcpp::Node *node, const ConfigLoader &cfg) {
 }
 
 void GimbalController::set_command(const GimbalCommand &cmd) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (navigation_follow_active_ && !cmd.follow_navigation) {
+        reset_navigation_follow();
+    }
     command_ = cmd;
     command_valid_ = true;
 }
 
 void GimbalController::update(double dt) {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!command_valid_) {
         return;
     }
 
     dt_ = dt;
+
+    if (command_.follow_navigation) {
+        if (!navigation_inputs_ready(node_->now().nanoseconds())) {
+            reset_navigation_follow();
+            stop_all();
+            return;
+        }
+    }
 
     // 计算控制
     compute_pitch_control();
@@ -81,11 +94,27 @@ void GimbalController::update(double dt) {
 }
 
 void GimbalController::stop() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (navigation_follow_active_) {
+        reset_navigation_follow();
+    }
     stop_all();
 }
 
 void GimbalController::cb_imu(const sensor_msgs::msg::Imu::SharedPtr msg) {
+    std::lock_guard<std::mutex> lock(mutex_);
     const auto &q = msg->orientation;
+    const double norm = q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z;
+    const auto stamp = rclcpp::Time(msg->header.stamp).nanoseconds();
+    navigation_imu_valid_ = stamp > 0 && std::isfinite(norm) && std::abs(norm - 1.0) <= 0.01 &&
+                            std::isfinite(msg->angular_velocity.z) && msg->orientation_covariance[0] >= 0.0;
+    if (!navigation_imu_valid_) {
+        return;
+    }
+    if (stamp < imu_stamp_ns_) {
+        return;
+    }
+    imu_stamp_ns_ = stamp;
     imu_pitch_rad_ = quaternion_to_pitch({q.w, q.x, q.y, q.z});
     imu_yaw_rad_ = quaternion_to_yaw({q.w, q.x, q.y, q.z});
     imu_gyro_z_ = msg->angular_velocity.z;
@@ -97,11 +126,15 @@ void GimbalController::cb_pitch_feedback(const custom_msgs::msg::ReadDJIMotor::S
 }
 
 void GimbalController::cb_yaw_feedback(const custom_msgs::msg::ReadLkMotor::SharedPtr msg) {
+    std::lock_guard<std::mutex> lock(mutex_);
     yaw_motor_speed_ = msg->speed;
     yaw_motor_pos_ = (msg->encoder / 65535.0) * 2.0 * M_PI;
 }
 
 void GimbalController::compute_pitch_control() {
+    if (command_.follow_navigation) {
+        return;
+    }
     if (command_.scan_mode) {
         // 扫描模式：速度驱动，到达限位反转
         target_pitch_deg_ += command_.scan_vel_pitch * scan_direction_pitch_ * dt_ * (180.0 / M_PI);
@@ -127,7 +160,9 @@ void GimbalController::compute_pitch_control() {
 }
 
 void GimbalController::compute_yaw_control() {
-    if (command_.scan_mode) {
+    if (command_.follow_navigation) {
+        compute_navigation_yaw_control();
+    } else if (command_.scan_mode) {
         // 速度扫描模式：按速度移动，到达限幅后反转方向
         target_yaw_rad_ += command_.scan_vel_yaw * scan_direction_yaw_ * dt_;
         if (target_yaw_rad_ >= command_.scan_yaw_max) {
@@ -145,6 +180,54 @@ void GimbalController::compute_yaw_control() {
         target_yaw_rad_ += command_.yaw_rad;
         target_yaw_rad_ = std::atan2(std::sin(target_yaw_rad_), std::cos(target_yaw_rad_));
     }
+}
+
+bool GimbalController::navigation_inputs_ready(int64_t now_ns) const {
+    const double imu_age = static_cast<double>(now_ns - imu_stamp_ns_) * 1e-9;
+    const double command_age = static_cast<double>(now_ns - command_.navigation_stamp_ns) * 1e-9;
+    return config_.follow_navigation && navigation_imu_valid_ &&
+           std::isfinite(dt_) && dt_ > 0.0 && dt_ <= config_.follow_input_timeout_s &&
+           imu_age >= -0.05 && imu_age < config_.follow_input_timeout_s &&
+           command_.navigation_stamp_ns > 0 && command_.navigation_stamp_ns >= navigation_stamp_ns_ &&
+           command_age >= -0.05 && command_age < config_.follow_input_timeout_s &&
+           std::isfinite(std::hypot(command_.navigation_vx, command_.navigation_vy));
+}
+
+void GimbalController::reset_navigation_follow() {
+    navigation_follow_active_ = false;
+    navigation_moving_ = false;
+    navigation_stamp_ns_ = 0;
+    navigation_yaw_rate_ = 0.0;
+    if (pid_yaw_pos_) pid_yaw_pos_->reset();
+    if (pid_yaw_spd_) pid_yaw_spd_->reset();
+}
+
+void GimbalController::compute_navigation_yaw_control() {
+    if (!navigation_follow_active_) {
+        reset_navigation_follow();
+        target_yaw_rad_ = imu_yaw_rad_;
+        target_pitch_deg_ = clamp(-imu_pitch_rad_ * (180.0 / M_PI), config_.pitch_min_deg, config_.pitch_max_deg);
+        navigation_follow_active_ = true;
+    }
+    if (command_.navigation_stamp_ns != navigation_stamp_ns_) {
+        navigation_moving_ = std::hypot(command_.navigation_vx, command_.navigation_vy) >= config_.follow_min_speed;
+        navigation_target_yaw_ = normalize_angle(
+            imu_yaw_rad_ + std::atan2(command_.navigation_vy, command_.navigation_vx));
+        navigation_stamp_ns_ = command_.navigation_stamp_ns;
+    }
+
+    const double error = normalize_angle(navigation_target_yaw_ - target_yaw_rad_);
+    // 转动段保留最低目标速度，到位后平滑减速至零。
+    double desired_rate = 0.0;
+    if (navigation_moving_ && std::abs(error) > config_.follow_yaw_tolerance) {
+        const double braking_rate = std::sqrt(
+            2.0 * config_.follow_max_yaw_accel * (std::abs(error) - config_.follow_yaw_tolerance));
+        desired_rate = std::copysign(clamp(braking_rate, config_.follow_min_yaw_rate,
+                                          config_.follow_max_yaw_rate), error);
+    }
+    const double max_change = config_.follow_max_yaw_accel * dt_;
+    navigation_yaw_rate_ += clamp(desired_rate - navigation_yaw_rate_, -max_change, max_change);
+    target_yaw_rad_ = normalize_angle(target_yaw_rad_ + navigation_yaw_rate_ * dt_);
 }
 
 void GimbalController::publish_commands() {
@@ -166,10 +249,11 @@ void GimbalController::publish_commands() {
     double pos_error = target_yaw_rad_ - imu_yaw_rad_;
     pos_error = std::atan2(std::sin(pos_error), std::cos(pos_error)); // 归一化
 
-    // 前馈角速度（仅在 RC 增量模式下有效，绝对/扫描模式为 0）
-    double target_ang_vel = (!command_.absolute && !command_.scan_mode)
-        ? (-command_.yaw_rad * (10.0 * M_PI * 0.001))
-        : 0.0;
+    // 导航跟随使用目标角速度；RC 使用原有增量换算。
+    double target_ang_vel = command_.follow_navigation
+        ? navigation_yaw_rate_
+        : ((!command_.absolute && !command_.scan_mode)
+            ? (-command_.yaw_rad * (10.0 * M_PI * 0.001)) : 0.0);
 
     // D 项输入
     double d_input = target_ang_vel - imu_gyro_z_;

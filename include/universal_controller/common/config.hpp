@@ -10,6 +10,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <cstdint>
 #include <string>
+#include <stdexcept>
 #include <vector>
 #include <array>
 
@@ -273,6 +274,17 @@ struct GimbalConfig {
     // 自瞄超时
     double autoaim_timeout_s{0.2};
 
+    // 导航朝向跟随与行进中的云台自瞄许可。
+    bool follow_navigation{false};
+    bool navigation_autoaim_takeover{false};
+    std::string navigation_frame{"gimbal_yaw"};
+    double follow_min_yaw_rate{0.3};
+    double follow_max_yaw_rate{1.0};
+    double follow_max_yaw_accel{2.0};
+    double follow_yaw_tolerance{0.02};
+    double follow_min_speed{0.03};
+    double follow_input_timeout_s{0.2};
+
     void load(const ConfigLoader &cfg) {
         pitch_center_ecd = cfg.get_prefixed_int("controllers.gimbal", "pitch_center_ecd", pitch_center_ecd);
         pitch_min_deg = cfg.get_prefixed_double("controllers.gimbal", "pitch_min_deg", pitch_min_deg);
@@ -292,6 +304,34 @@ struct GimbalConfig {
         yaw_spd_pid = cfg.get_pid_params("controllers.gimbal.yaw_spd_pid", yaw_spd_pid);
 
         autoaim_timeout_s = cfg.get_prefixed_double("controllers.gimbal", "autoaim_timeout_s", autoaim_timeout_s);
+
+        follow_navigation = cfg.get_prefixed_bool("controllers.gimbal", "follow_navigation", follow_navigation);
+        navigation_autoaim_takeover = cfg.get_prefixed_bool(
+            "controllers.gimbal", "navigation_autoaim_takeover", navigation_autoaim_takeover);
+        navigation_frame = cfg.get_prefixed_string("controllers.gimbal", "navigation_frame", navigation_frame);
+        follow_min_yaw_rate = cfg.get_prefixed_double("controllers.gimbal", "follow_min_yaw_rate", follow_min_yaw_rate);
+        follow_max_yaw_rate = cfg.get_prefixed_double("controllers.gimbal", "follow_max_yaw_rate", follow_max_yaw_rate);
+        follow_max_yaw_accel = cfg.get_prefixed_double("controllers.gimbal", "follow_max_yaw_accel", follow_max_yaw_accel);
+        follow_yaw_tolerance = cfg.get_prefixed_double("controllers.gimbal", "follow_yaw_tolerance", follow_yaw_tolerance);
+        follow_min_speed = cfg.get_prefixed_double("controllers.gimbal", "follow_min_speed", follow_min_speed);
+        follow_input_timeout_s = cfg.get_prefixed_double(
+            "controllers.gimbal", "follow_input_timeout_s", follow_input_timeout_s);
+        for (double value : {follow_max_yaw_rate, follow_max_yaw_accel, follow_yaw_tolerance,
+                             follow_min_speed, follow_input_timeout_s}) {
+            if (!std::isfinite(value) || value <= 0.0) {
+                throw std::invalid_argument("Navigation gimbal limits must be finite and positive");
+            }
+        }
+        if (!std::isfinite(follow_min_yaw_rate) || follow_min_yaw_rate < 0.0 ||
+            follow_min_yaw_rate > follow_max_yaw_rate) {
+            throw std::invalid_argument("follow_min_yaw_rate must be finite and between zero and follow_max_yaw_rate");
+        }
+        if (follow_min_yaw_rate * follow_min_yaw_rate > 4.0 * follow_max_yaw_accel * follow_yaw_tolerance) {
+            throw std::invalid_argument("Minimum yaw rate requires a larger yaw tolerance or acceleration");
+        }
+        if (navigation_frame.empty()) {
+            throw std::invalid_argument("Navigation gimbal frame must be specified");
+        }
     }
 };
 
