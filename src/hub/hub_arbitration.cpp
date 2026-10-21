@@ -147,7 +147,7 @@ void Hub::dispatch_commands() {
 }
 
 void Hub::dispatch_chassis() {
-    bool ext_spin = (std::abs(nav_spin_speed_) > 1e-3f);
+    bool ext_spin = nav_spin_publisher_present_ && (std::abs(nav_spin_speed_) > 1e-3f);
 
     if (!game_started_) {
         ext_spin = false;
@@ -164,11 +164,13 @@ void Hub::dispatch_chassis() {
         case SubsystemInput::RC: {
             const double vx_g = unified_input_->vx / chassis_cmd_k_linear_;
             const double vy_g = unified_input_->vy / chassis_cmd_k_linear_;
+            const double spin_rate = chassis_spin_rate(
+                ext_spin, nav_spin_speed_, unified_input_->spin_mode,
+                unified_input_->wz, chassis_cmd_k_spin_);
             double theta = chassis_->gimbal_yaw_angle();
             if (ext_spin || unified_input_->spin_mode) {
-                // ext_spin：行为树 /cmd_spin；否则 RC 小陀螺用 unified wz（与 spin_speed 同量纲）
-                const double wz_enc =
-                    ext_spin ? static_cast<double>(nav_spin_speed_) : unified_input_->wz;
+                // The existing phase coefficient is calibrated in remote-control units.
+                const double wz_enc = spin_rate * chassis_cmd_k_spin_;
                 theta += chassis_config_.spin_compensation_k * wz_enc;
             }
             double vx_c = 0.0;
@@ -176,13 +178,7 @@ void Hub::dispatch_chassis() {
             gimbal_vel_to_chassis_mps(vx_g, vy_g, theta, vx_c, vy_c);
             msg.x_speed = static_cast<float>(vx_c);
             msg.y_speed = static_cast<float>(vy_c);
-            if (ext_spin || unified_input_->spin_mode) {
-                const double spd =
-                    ext_spin ? static_cast<double>(nav_spin_speed_) : unified_input_->wz;
-                msg.spin_speed = static_cast<float>(spd / chassis_cmd_k_spin_);
-            } else {
-                msg.spin_speed = 0.0f;
-            }
+            msg.spin_speed = static_cast<float>(spin_rate);
             break;
         }
         case SubsystemInput::NAVIGATION: {

@@ -110,6 +110,16 @@ Hub 由 4 个源文件组成：
 | GimbalController | 云台控制 | Pitch: DJI, Yaw: LK | IMU 反馈、自瞄集成（Hub 统一下发）、前馈角速度 |
 | FireController | 发射控制 | DJI | 三态状态机（IDLE→LOADING→READY）、裁判约束、单发/连发 |
 
+小陀螺的 `/cmd_spin` 和 `ChassisControl.spin_speed` 使用 `rad/s`。
+遥控输入 `UnifiedInput.wz` 使用内部单位，输出到底盘时除以 `chassis_cmd.k_spin`；
+默认比例为 `1348`。遥控分支采用行为树旋转指令时，直接使用其 `rad/s` 数值。
+平移相位补偿系数按内部单位标定，因此先将实际角速度换回对应内部量再计算补偿。
+导航分支采用 `/cmd_vel.angular.z`，其中的行为树旋转由 `fake_vel_transform` 合成。
+Hub 每秒发布约 20 次 `/universal_controller/remote_spin`（`example_interfaces/Float32`），
+采用当前选中的遥控输入，单位为 `rad/s`；急停、遥控断开、导航关闭或小陀螺关闭时发布零。
+Odin 的速度转换节点在独立 RViz 导航中使用该值；行为树的 `/cmd_spin` 发布者存在时优先采用树的指令，包含初始化时的零速度。
+发布者退出后清除旧旋转缓存，恢复遥控小陀螺。
+
 ## ROS2 话题接口
 
 ### 订阅 (Subscribers)

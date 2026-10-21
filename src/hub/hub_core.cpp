@@ -73,6 +73,8 @@ Hub::Hub(std::shared_ptr<ChassisController> chassis, std::shared_ptr<GimbalContr
     // 发布底盘指令（ChassisControl）
     pub_chassis_command_ = this->create_publisher<chassis_controllers::msg::ChassisControl>(
         "/chassis_command", rclcpp::SensorDataQoS());
+    pub_remote_spin_ = this->create_publisher<example_interfaces::msg::Float32>(
+        "/universal_controller/remote_spin", rclcpp::QoS(1));
 
     // 订阅 auto_aim_switch（导航模式下由行为树发布，用于门控火控）
     sub_auto_aim_switch_ = this->create_subscription<std_msgs::msg::Int32>(
@@ -158,6 +160,22 @@ void Hub::control_loop() {
 
     // 模式仲裁
     arbitration_ = arbitrate();
+
+    // Share the selected remote's spin in rad/s with the navigation converter.
+    const double spin_age = (now - remote_spin_last_time_).seconds();
+    if (spin_age >= 0.05 || spin_age < 0.0) {
+        nav_spin_publisher_present_ = sub_cmd_spin_->get_publisher_count() > 0;
+        if (!nav_spin_publisher_present_) {
+            nav_spin_speed_ = 0.0f;
+        }
+        example_interfaces::msg::Float32 spin;
+        if (!arbitration_.emergency_stop && unified_input_->navigation_enabled) {
+            spin.data = static_cast<float>(chassis_spin_rate(
+                false, 0.0, unified_input_->spin_mode, unified_input_->wz, chassis_cmd_k_spin_));
+        }
+        pub_remote_spin_->publish(spin);
+        remote_spin_last_time_ = now;
+    }
 
     // 分发指令
     dispatch_commands();

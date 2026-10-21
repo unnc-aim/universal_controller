@@ -124,6 +124,8 @@ class Hub : public rclcpp::Node {
     double gimbal_scan_timeout_s_{0.5};
 
     float nav_spin_speed_{0.0f};
+    bool nav_spin_publisher_present_{false};
+    rclcpp::Time remote_spin_last_time_{0, 0, RCL_ROS_TIME};
 
     bool nav_fire_allowed_{false};  ///< 导航模式下行为树是否通过 auto_aim_switch 允许开火
 
@@ -153,6 +155,7 @@ class Hub : public rclcpp::Node {
     // ========== 发布者 ==========
     rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr pub_auto_aim_switch_;
     rclcpp::Publisher<chassis_controllers::msg::ChassisControl>::SharedPtr pub_chassis_command_;
+    rclcpp::Publisher<example_interfaces::msg::Float32>::SharedPtr pub_remote_spin_;
 
     // ========== 定时器 ==========
     rclcpp::TimerBase::SharedPtr timer_;

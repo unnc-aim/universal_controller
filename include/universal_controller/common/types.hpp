@@ -280,6 +280,19 @@ inline double quaternion_to_pitch(const Quaternion &q) {
     return std::asin(sinp);
 }
 
+// External spin is already rad/s; remote-control spin uses internal units.
+inline double chassis_spin_rate(bool external_active, double external_rad_s,
+                                bool remote_active, double remote_units, double units_per_rad_s) {
+    if (external_active) {
+        return std::isfinite(external_rad_s) ? external_rad_s : 0.0;
+    }
+    if (remote_active && std::isfinite(remote_units) &&
+        std::isfinite(units_per_rad_s) && units_per_rad_s > 0.0) {
+        return remote_units / units_per_rad_s;
+    }
+    return 0.0;
+}
+
 /**
  * @brief 角度归一化到 [-PI, PI]
  */

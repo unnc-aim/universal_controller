@@ -48,9 +48,32 @@ struct NavigationGimbalTest {
         }
     }
 
-    static void run() {
+    static double settling_time(double rate, double accel) {
         GimbalController controller;
         controller.config_.follow_navigation = true;
+        controller.config_.follow_max_yaw_rate = rate;
+        controller.config_.follow_max_yaw_accel = accel;
+        controller.dt_ = 0.001;
+        for (int i = 0; i < 10000; ++i) {
+            const int64_t stamp = START + i * 1000000LL;
+            sample(controller, controller.target_yaw_rad_, stamp);
+            if (i % 50 == 0) command(controller, M_PI / 2, 0.2, stamp);
+            tick(controller, stamp);
+            if (std::abs(normalize_angle(controller.target_yaw_rad_ - M_PI / 2)) <=
+                controller.config_.follow_yaw_tolerance &&
+                std::abs(controller.navigation_yaw_rate_) < 1e-12) {
+                return i * controller.dt_;
+            }
+        }
+        assert(false && "Direction-following target should settle");
+        return 10.0;
+    }
+
+    static void run(double rate, double accel) {
+        GimbalController controller;
+        controller.config_.follow_navigation = true;
+        controller.config_.follow_max_yaw_rate = rate;
+        controller.config_.follow_max_yaw_accel = accel;
         controller.dt_ = 0.001;
         for (const auto &angles : {std::make_pair(0.0, 1.0), std::make_pair(3.13, -3.0),
                                   std::make_pair(-3.13, 3.0), std::make_pair(0.0, M_PI)}) {
@@ -176,5 +199,19 @@ struct NavigationGimbalTest {
 } // namespace universal_controller
 
 int main() {
-    universal_controller::NavigationGimbalTest::run();
+    using universal_controller::chassis_spin_rate;
+    assert(std::abs(chassis_spin_rate(true, 2.2, true, 3000.0, 1348.0) - 2.2) < 1e-12);
+    assert(std::abs(chassis_spin_rate(false, 2.2, true, 3000.0, 1348.0) - 3000.0 / 1348.0) < 1e-12);
+    assert(chassis_spin_rate(false, 2.2, false, 3000.0, 1348.0) == 0.0);
+    assert(chassis_spin_rate(true, -2.2, false, 0.0, 1348.0) == -2.2);
+    assert(chassis_spin_rate(false, 0.0, true, 3000.0, 0.0) == 0.0);
+    assert(chassis_spin_rate(true, std::numeric_limits<double>::quiet_NaN(), false, 0.0, 1348.0) == 0.0);
+    std::cout << "PASS: external spin units, RC spin conversion and disabled spin\n";
+    using Test = universal_controller::NavigationGimbalTest;
+    Test::run(1.0, 2.0);
+    Test::run(3.0, 6.0);
+    const double previous = Test::settling_time(1.0, 2.0);
+    const double faster = Test::settling_time(3.0, 6.0);
+    assert(faster < previous * 0.65);
+    std::cout << "90-degree target settling: " << previous << " s -> " << faster << " s\n";
 }
